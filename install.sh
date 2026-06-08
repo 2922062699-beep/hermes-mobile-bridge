@@ -30,7 +30,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-BRIDGE_PAYLOAD_REF="6739ab5288efa16421d3e6fe2c3e44db249b8c90"
+BRIDGE_PAYLOAD_REF="0da832b01516392c19af566c8144f4c6cab3cec9"
 REPO_RAW_BASE="https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/${BRIDGE_PAYLOAD_REF}"
 INSTALL_ROOT="${HMB_INSTALL_DIR:-${HOME}/.hermes-mobile-bridge}"
 INSTALL_REQUEST_ID="$(node -e "console.log(Date.now())" 2>/dev/null || date +%s)"
