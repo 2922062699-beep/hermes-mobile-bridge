@@ -22,7 +22,7 @@ This avoids mixed installs when GitHub raw content temporarily serves a stale `m
 
 ## Current Version
 
-Bridge version: `0.2.0`
+Bridge version: `0.2.1`
 
 Current payload pin: check `$BridgePayloadRef` in `install.ps1` on `main`.
 
