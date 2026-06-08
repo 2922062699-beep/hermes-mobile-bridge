@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 
 $RepoRawBase = "https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/main"
 $InstallRoot = Join-Path $env:LOCALAPPDATA "HermesMobileBridge"
+$InstallRequestId = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $Files = @(
   "package.json",
   "hermes-mobile.ps1",
@@ -27,7 +28,7 @@ function Save-BridgeFile {
     New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
   }
 
-  $url = "$RepoRawBase/$($RelativePath -replace '\\','/')"
+  $url = "$RepoRawBase/$($RelativePath -replace '\\','/')?v=$InstallRequestId"
   Write-Host "Downloading $RelativePath"
   try {
     Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $target
