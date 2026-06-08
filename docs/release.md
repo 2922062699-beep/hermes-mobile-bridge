@@ -1,12 +1,20 @@
 # Release Notes and Payload Pinning
 
-Remote install starts from:
+Remote install starts from one of these entrypoints.
+
+Windows PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/main/install.ps1 | iex
 ```
 
-`install.ps1` downloads the Bridge payload from a pinned commit, not from `main`.
+macOS/Linux/WSL:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/main/install.sh | bash
+```
+
+`install.ps1` and `install.sh` download the Bridge payload from a pinned commit, not from `main`.
 
 This avoids mixed installs when GitHub raw content temporarily serves a stale `main` blob.
 
@@ -18,14 +26,16 @@ This avoids mixed installs when GitHub raw content temporarily serves a stale `m
 4. Commit the payload changes.
 5. Copy the full payload commit SHA.
 6. Update `$BridgePayloadRef` in `install.ps1` to that full SHA.
-7. Commit and push the install pointer update.
-8. Test the raw install command.
+7. Update `PAYLOAD_REF` in `install.sh` to the same full SHA.
+8. Confirm `install.ps1` and `install.sh` pin exactly the same commit SHA.
+9. Commit and push the install pointer update.
+10. Test both raw install commands when platform access is available.
 
 ## Current Version
 
-Bridge version: `0.3.1`
+Bridge version: `0.4.0`
 
-Current payload pin: check `$BridgePayloadRef` in `install.ps1` on `main`.
+Current payload pin: check `$BridgePayloadRef` in `install.ps1` and `PAYLOAD_REF` in `install.sh` on `main`. They must match.
 
 ## Why Pin
 
