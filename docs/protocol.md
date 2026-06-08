@@ -104,3 +104,63 @@ Authorization: Bearer hm_xxxxx
 ```
 
 Phase 1 returns the same data as capabilities. Later phases will actively test Hermes Agent, LLM, memory, token usage, approval, SSE, and stop.
+
+## Fix
+
+```http
+POST /v1/mobile/fix
+Authorization: Bearer hm_xxxxx
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "action": "memory"
+}
+```
+
+Phase 1 only accepts hardcoded allow-list actions and does not execute arbitrary PC commands.
+
+Allowed actions:
+
+- `bridge`
+- `agent`
+- `runs`
+- `sse`
+- `llm`
+- `memory`
+- `usage`
+- `approval`
+- `stop`
+- `files`
+- `doctor`
+
+Response:
+
+```json
+{
+  "status": "completed",
+  "healthStatus": "ok",
+  "actions": [
+    {
+      "key": "memory",
+      "status": "unavailable",
+      "detail": "Memory diagnostics require Hermes Agent integration in a later phase."
+    }
+  ],
+  "capabilities": {
+    "bridge": "ok",
+    "agent": "unavailable"
+  },
+  "checks": [
+    {
+      "key": "bridge",
+      "status": "ok",
+      "label": "Bridge reachable",
+      "detail": "Hermes Mobile Bridge is running"
+    }
+  ]
+}
+```

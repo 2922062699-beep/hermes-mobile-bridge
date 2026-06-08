@@ -101,6 +101,103 @@ function getDetailedStatus() {
   }
 }
 
+function getAllowedFixAction(key) {
+  const actions = {
+    bridge: {
+      key: 'bridge',
+      status: 'ok',
+      detail: 'Bridge is already running. Diagnostics refreshed.',
+    },
+    agent: {
+      key: 'agent',
+      status: 'unavailable',
+      detail: 'Hermes Agent integration is not available in Bridge Phase 1.',
+    },
+    runs: {
+      key: 'runs',
+      status: 'unavailable',
+      detail: 'Runs passthrough is not available in Bridge Phase 1.',
+    },
+    sse: {
+      key: 'sse',
+      status: 'unavailable',
+      detail: 'SSE passthrough is not available in Bridge Phase 1.',
+    },
+    llm: {
+      key: 'llm',
+      status: 'unavailable',
+      detail: 'LLM diagnostics require Hermes Agent integration in a later phase.',
+    },
+    memory: {
+      key: 'memory',
+      status: 'unavailable',
+      detail: 'Memory diagnostics require Hermes Agent integration in a later phase.',
+    },
+    usage: {
+      key: 'usage',
+      status: 'unavailable',
+      detail: 'Token usage diagnostics require Hermes Agent integration in a later phase.',
+    },
+    approval: {
+      key: 'approval',
+      status: 'unavailable',
+      detail: 'Approval passthrough is not available in Bridge Phase 1.',
+    },
+    stop: {
+      key: 'stop',
+      status: 'unavailable',
+      detail: 'Stop passthrough is not available in Bridge Phase 1.',
+    },
+    files: {
+      key: 'files',
+      status: 'unavailable',
+      detail: 'File passthrough is not available in Bridge Phase 1.',
+    },
+    doctor: {
+      key: 'doctor',
+      status: 'ok',
+      detail: 'Diagnostics refreshed.',
+    },
+  }
+
+  return actions[key] || null
+}
+
+async function handleFix(request, response) {
+  const payload = await readJson(request)
+  const requestedAction =
+    typeof payload.action === 'string' ? payload.action.trim() : 'doctor'
+  const action = getAllowedFixAction(requestedAction)
+
+  if (!action) {
+    writeJson(response, 400, {
+      error: 'Unsupported fix action',
+      allowedActions: [
+        'bridge',
+        'agent',
+        'runs',
+        'sse',
+        'llm',
+        'memory',
+        'usage',
+        'approval',
+        'stop',
+        'files',
+        'doctor',
+      ],
+    })
+    return
+  }
+
+  const detailedStatus = getDetailedStatus()
+  writeJson(response, 200, {
+    ...detailedStatus,
+    status: 'completed',
+    healthStatus: detailedStatus.status,
+    actions: [action],
+  })
+}
+
 async function handlePair(request, response) {
   const payload = await readJson(request)
   const receivedCode =
@@ -167,6 +264,11 @@ async function route(request, response) {
 
   if (request.method === 'POST' && url.pathname === '/v1/mobile/doctor') {
     writeJson(response, 200, getDetailedStatus())
+    return
+  }
+
+  if (request.method === 'POST' && url.pathname === '/v1/mobile/fix') {
+    await handleFix(request, response)
     return
   }
 

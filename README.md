@@ -73,6 +73,7 @@ Implemented:
 - `POST /v1/mobile/pair`
 - `GET /v1/mobile/capabilities`
 - `POST /v1/mobile/doctor`
+- `POST /v1/mobile/fix`
 
 Not implemented yet:
 
@@ -80,7 +81,7 @@ Not implemented yet:
 - SSE passthrough;
 - approval passthrough;
 - token usage aggregation;
-- automated fix actions.
+- active Hermes Agent adaptation and automated fix actions.
 
 ## Security Boundary
 
