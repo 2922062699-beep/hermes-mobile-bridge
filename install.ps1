@@ -14,6 +14,7 @@ $Files = @(
   "bridge/server.mjs",
   "docs/protocol.md",
   "docs/security.md",
+  "docs/troubleshooting.md",
   "README.md"
 )
 
@@ -27,7 +28,16 @@ function Save-BridgeFile {
   }
 
   $url = "$RepoRawBase/$($RelativePath -replace '\\','/')"
-  Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $target
+  Write-Host "Downloading $RelativePath"
+  try {
+    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $target
+  } catch {
+    throw "Failed to download $RelativePath from $url. Check that GitHub raw content is reachable from this PC, then retry."
+  }
+
+  if (-not (Test-Path $target)) {
+    throw "Download finished but file is missing: $target"
+  }
 }
 
 function Install-BridgeFiles {
@@ -48,4 +58,5 @@ if (-not (Test-Path $Launcher)) {
 }
 
 Write-Host "Hermes Mobile Bridge installed at $InstallRoot"
+Write-Host ""
 & $Launcher $Command -Port $Port

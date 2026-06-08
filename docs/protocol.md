@@ -81,6 +81,13 @@ Pairing fields:
 
 ```json
 {
+  "network": {
+    "lanIp": "192.168.31.191",
+    "listenHost": "0.0.0.0",
+    "localHealthUrl": "http://127.0.0.1:8642/health",
+    "phoneUrl": "http://192.168.31.191:8642",
+    "port": 8642
+  },
   "pairing": {
     "available": true,
     "codeLength": 6,

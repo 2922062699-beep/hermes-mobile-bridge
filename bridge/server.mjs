@@ -15,6 +15,24 @@ let pairingCreatedAt = Date.now()
 let pairingUsed = false
 const mobileApiKey = `hm_${crypto.randomBytes(24).toString('hex')}`
 
+function getLanIp() {
+  const interfaces = os.networkInterfaces()
+  for (const entries of Object.values(interfaces)) {
+    if (!entries) continue
+    for (const entry of entries) {
+      if (
+        entry.family === 'IPv4' &&
+        !entry.internal &&
+        !entry.address.startsWith('169.254.')
+      ) {
+        return entry.address
+      }
+    }
+  }
+
+  return '127.0.0.1'
+}
+
 function createPairingCode() {
   return crypto.randomInt(0, 1000000).toString().padStart(6, '0')
 }
@@ -113,6 +131,13 @@ function getDetailedStatus() {
     platform: 'windows',
     serverName,
     gatewayUrl: PUBLIC_URL,
+    network: {
+      lanIp: getLanIp(),
+      listenHost: '0.0.0.0',
+      localHealthUrl: `http://127.0.0.1:${PORT}/health`,
+      phoneUrl: PUBLIC_URL,
+      port: PORT,
+    },
     pairing: {
       available: isPairingAvailable(),
       codeLength: 6,

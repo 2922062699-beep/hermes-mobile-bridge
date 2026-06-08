@@ -73,6 +73,16 @@ If port `8642` is busy, the launcher tries the next available port up to `8662` 
 
 Pairing codes expire after 5 minutes and are invalidated after successful pairing. Restart the Bridge to generate a new code.
 
+If the phone cannot connect, run:
+
+```powershell
+.\hermes-mobile.ps1 status
+```
+
+The status output includes the phone URL, LAN IP, local health URL, and Windows Firewall hint.
+
+See [docs/troubleshooting.md](docs/troubleshooting.md).
+
 ## Phase 1 Scope
 
 Implemented:

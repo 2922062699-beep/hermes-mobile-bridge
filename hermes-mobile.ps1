@@ -52,6 +52,12 @@ function Resolve-BridgePort {
 function Get-LocalGatewayUrl {
   param([int]$SelectedPort)
 
+  $ip = Get-PrimaryLanIp
+
+  return "http://$ip`:$SelectedPort"
+}
+
+function Get-PrimaryLanIp {
   $ip = Get-NetIPAddress -AddressFamily IPv4 |
     Where-Object {
       $_.IPAddress -notlike "127.*" -and
@@ -64,7 +70,32 @@ function Get-LocalGatewayUrl {
     $ip = "127.0.0.1"
   }
 
-  return "http://$ip`:$SelectedPort"
+  return $ip
+}
+
+function Get-FirewallHint {
+  param([int]$SelectedPort)
+
+  return "Bridge does not change firewall rules. If the phone cannot connect to TCP $SelectedPort, allow Node.js on private networks."
+}
+
+function Write-NetworkHelp {
+  param(
+    [string]$GatewayUrl,
+    [int]$SelectedPort
+  )
+
+  Write-Host ""
+  Write-Host "Network checks:"
+  Write-Host "  Local health: http://127.0.0.1:$SelectedPort/health"
+  Write-Host "  Phone URL: $GatewayUrl"
+  Write-Host "  LAN IP: $(Get-PrimaryLanIp)"
+  Write-Host "  Firewall: $(Get-FirewallHint $SelectedPort)"
+  Write-Host ""
+  Write-Host "If the phone cannot connect:"
+  Write-Host "  1. Keep this terminal open."
+  Write-Host "  2. Confirm phone and PC are on the same Wi-Fi or VPN."
+  Write-Host "  3. Allow Node.js through Windows Firewall for private networks."
 }
 
 $NodeVersion = Test-Node
@@ -80,7 +111,7 @@ if ($Command -eq "start") {
   Write-Host "Node.js: $NodeVersion"
   Write-Host "Install dir: $ScriptDir"
   Write-Host "Gateway URL: $GatewayUrl"
-  Write-Host ""
+  Write-NetworkHelp $GatewayUrl $SelectedPort
 
   $env:HMB_PORT = "$SelectedPort"
   $env:HMB_PUBLIC_URL = $GatewayUrl
@@ -105,6 +136,17 @@ if ($Command -eq "doctor" -or $Command -eq "status") {
     Write-Host "Capabilities:"
     $result.capabilities.PSObject.Properties | ForEach-Object {
       Write-Host "  $($_.Name): $($_.Value)"
+    }
+    if ($result.network) {
+      Write-Host ""
+      Write-Host "Network:"
+      Write-Host "  Local health: $($result.network.localHealthUrl)"
+      Write-Host "  Phone URL: $($result.network.phoneUrl)"
+      Write-Host "  LAN IP: $($result.network.lanIp)"
+      Write-Host "  Listen host: $($result.network.listenHost)"
+      Write-Host "  Firewall: $(Get-FirewallHint $Port)"
+      Write-Host ""
+      Write-Host "If the phone cannot connect, keep Bridge running and check same Wi-Fi/VPN plus Windows Firewall private-network access for Node.js."
     }
   } catch {
     Write-Host "Hermes Mobile Bridge is not reachable at $url"
