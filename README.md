@@ -49,6 +49,12 @@ Open HermesMobile and scan the QR code. If camera pairing is unavailable, enter 
 - `Gateway URL`
 - `Pairing Code`
 
+The QR payload uses the custom URL scheme:
+
+```text
+hmb://pair?v=1&b=http%3A%2F%2F192.168.31.191%3A8642&c=482913
+```
+
 HermesMobile exchanges the code for an API key through:
 
 ```text

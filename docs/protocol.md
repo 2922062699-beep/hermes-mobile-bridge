@@ -1,6 +1,6 @@
 # Hermes Mobile Bridge Protocol
 
-Version: `0.3.0`
+Version: `0.3.1`
 
 ## Product Boundary
 
@@ -23,16 +23,18 @@ Bridge endpoints in this document are for pairing, diagnostics, troubleshooting,
 
 ## QR Pairing Payload
 
-Bridge may print a terminal QR code containing this JSON string:
+Bridge may print a terminal QR code containing this custom URL scheme payload:
 
-```json
-{"v":1,"b":"http://192.168.31.191:8642","c":"482913"}
+```text
+hmb://pair?v=1&b=http%3A%2F%2F192.168.31.191%3A8642&c=482913
 ```
+
+Since `0.3.1`, QR payloads use `hmb://pair` instead of JSON. Bridge does not emit a JSON QR compatibility payload.
 
 Fields:
 
 - `v`: QR payload protocol version. Current value is `1`.
-- `b`: phone-reachable Bridge Gateway URL.
+- `b`: phone-reachable Bridge Gateway URL, URL-encoded by `URLSearchParams`; decoding it must round-trip to the original Bridge URL.
 - `c`: 6-digit pairing code.
 
 The QR payload does not include Agent Gateway URL, Agent API key, Bridge API key, server name, diagnostics, or long-term credentials. Hermes Mobile must still call the existing `POST /v1/mobile/pair` endpoint with `{ "pairingCode": "482913" }`.
@@ -199,7 +201,7 @@ The authenticated response includes private diagnostics:
     "expiresAt": "2026-06-08T10:30:00.000Z",
     "expiresInSeconds": 295,
     "used": false,
-    "qrPayload": "{\"v\":1,\"b\":\"http://192.168.31.191:8642\",\"c\":\"482913\"}"
+    "qrPayload": "hmb://pair?v=1&b=http%3A%2F%2F192.168.31.191%3A8642&c=482913"
   },
   "agent": {
     "agentUrl": "http://127.0.0.1:8642",
@@ -334,7 +336,7 @@ Response:
 ```json
 {
   "serverName": "Rick-PC",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "agent": {
     "agentUrl": "http://127.0.0.1:8642",
     "agentStatus": "ok",

@@ -311,7 +311,32 @@ function Read-PairingQrPayload {
   param([string]$QrPayload)
 
   try {
-    return $QrPayload | ConvertFrom-Json
+    $uri = [Uri]::new($QrPayload)
+    if ($uri.Scheme -ne "hmb" -or $uri.Host -ne "pair") {
+      return $null
+    }
+
+    $values = @{}
+    $query = $uri.Query.TrimStart("?")
+    foreach ($part in ($query -split "&")) {
+      if (-not $part) {
+        continue
+      }
+
+      $pieces = $part -split "=", 2
+      $key = [Uri]::UnescapeDataString($pieces[0])
+      $value = if ($pieces.Count -gt 1) { [Uri]::UnescapeDataString($pieces[1]) } else { "" }
+      $values[$key] = $value
+    }
+
+    if ($values.v -ne "1") {
+      return $null
+    }
+
+    return [pscustomobject]@{
+      b = $values.b
+      c = $values.c
+    }
   } catch {
     return $null
   }
