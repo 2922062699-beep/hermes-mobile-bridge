@@ -57,8 +57,39 @@ Pairing code rules:
 
 - 6 digits;
 - generated on Bridge start;
-- valid for the current Bridge process;
+- valid for 5 minutes by default;
 - invalidated after successful pairing.
+- if expired, restart Bridge to generate a new code.
+
+Expired pairing response:
+
+```json
+{
+  "error": "Pairing code has expired. Restart Bridge to get a new code."
+}
+```
+
+HTTP status: `410 Gone`.
+
+## Health Details
+
+```http
+GET /health/detailed
+```
+
+Pairing fields:
+
+```json
+{
+  "pairing": {
+    "available": true,
+    "codeLength": 6,
+    "expiresAt": "2026-06-08T10:30:00.000Z",
+    "expiresInSeconds": 295,
+    "used": false
+  }
+}
+```
 
 ## Capabilities
 

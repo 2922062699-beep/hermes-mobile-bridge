@@ -29,10 +29,15 @@ Or, from this repository:
 The terminal prints:
 
 ```text
+Node.js: v22.21.0
+Install dir: C:\Users\you\AppData\Local\HermesMobileBridge
+Gateway URL: http://192.168.31.191:8642
+
 Hermes Mobile Bridge is running.
 
 Gateway URL: http://192.168.31.191:8642
 Pairing Code: 482913
+Pairing Expires: 300 seconds
 ```
 
 Open HermesMobile and enter:
@@ -63,6 +68,10 @@ Run local commands from that folder:
 ```
 
 `start` runs the Bridge in the foreground. Keep the terminal open.
+
+If port `8642` is busy, the launcher tries the next available port up to `8662` and prints the final Gateway URL.
+
+Pairing codes expire after 5 minutes and are invalidated after successful pairing. Restart the Bridge to generate a new code.
 
 ## Phase 1 Scope
 

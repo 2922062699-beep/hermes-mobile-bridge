@@ -18,6 +18,8 @@ Phase 1 does not create firewall rules and does not expose public internet acces
 
 The Bridge runs in the foreground. Closing the terminal stops the service.
 
+Pairing codes expire after 5 minutes by default and are invalidated immediately after successful pairing.
+
 ## Future Fix Actions
 
 Allowed examples:

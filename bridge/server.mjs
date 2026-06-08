@@ -5,13 +5,34 @@ import crypto from 'node:crypto'
 const VERSION = '0.1.0'
 const PORT = Number.parseInt(process.env.HMB_PORT || '8642', 10)
 const PUBLIC_URL = process.env.HMB_PUBLIC_URL || `http://127.0.0.1:${PORT}`
+const PAIRING_TTL_MS = Number.parseInt(
+  process.env.HMB_PAIRING_TTL_MS || '300000',
+  10
+)
 const serverName = os.hostname()
 let pairingCode = createPairingCode()
+let pairingCreatedAt = Date.now()
 let pairingUsed = false
 const mobileApiKey = `hm_${crypto.randomBytes(24).toString('hex')}`
 
 function createPairingCode() {
   return crypto.randomInt(0, 1000000).toString().padStart(6, '0')
+}
+
+function getPairingExpiresAt() {
+  return new Date(pairingCreatedAt + PAIRING_TTL_MS).toISOString()
+}
+
+function getPairingExpiresInSeconds() {
+  return Math.max(0, Math.ceil((pairingCreatedAt + PAIRING_TTL_MS - Date.now()) / 1000))
+}
+
+function isPairingExpired() {
+  return getPairingExpiresInSeconds() <= 0
+}
+
+function isPairingAvailable() {
+  return !pairingUsed && !isPairingExpired()
 }
 
 function getCapabilities() {
@@ -93,8 +114,11 @@ function getDetailedStatus() {
     serverName,
     gatewayUrl: PUBLIC_URL,
     pairing: {
-      available: !pairingUsed,
+      available: isPairingAvailable(),
       codeLength: 6,
+      expiresAt: getPairingExpiresAt(),
+      expiresInSeconds: getPairingExpiresInSeconds(),
+      used: pairingUsed,
     },
     capabilities: getCapabilities(),
     checks: getChecks(),
@@ -208,6 +232,11 @@ async function handlePair(request, response) {
     return
   }
 
+  if (isPairingExpired()) {
+    writeJson(response, 410, { error: 'Pairing code has expired. Restart Bridge to get a new code.' })
+    return
+  }
+
   if (receivedCode !== pairingCode) {
     writeJson(response, 401, { error: 'Invalid pairing code' })
     return
@@ -289,6 +318,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('')
   console.log(`Gateway URL: ${PUBLIC_URL}`)
   console.log(`Pairing Code: ${pairingCode}`)
+  console.log(`Pairing Expires: ${getPairingExpiresInSeconds()} seconds`)
   console.log('')
   console.log('Open HermesMobile:')
   console.log('1. Enter Gateway URL')
