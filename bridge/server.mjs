@@ -2,10 +2,16 @@ import http from 'node:http'
 import os from 'node:os'
 import crypto from 'node:crypto'
 
-const VERSION = '0.2.0'
+const VERSION = '0.2.1'
 const PORT = Number.parseInt(process.env.HMB_PORT || '8642', 10)
 const PUBLIC_URL = process.env.HMB_PUBLIC_URL || `http://127.0.0.1:${PORT}`
 const AGENT_URL = (process.env.HMB_AGENT_URL || 'http://127.0.0.1:8642').replace(/\/+$/, '')
+const MEMORY_STATUS_PATHS = (
+  process.env.HMB_MEMORY_STATUS_PATHS || '/v1/memory/status,/memory/status,/v1/memory'
+)
+  .split(',')
+  .map((path) => path.trim())
+  .filter(Boolean)
 const PAIRING_TTL_MS = Number.parseInt(
   process.env.HMB_PAIRING_TTL_MS || '300000',
   10
@@ -116,6 +122,61 @@ function parseModelList(value) {
   return ownModel ? [ownModel, ...nested] : nested
 }
 
+function getAgentUrl(path) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${AGENT_URL}${normalizedPath}`
+}
+
+async function probeMemoryStatus() {
+  if (MEMORY_STATUS_PATHS.length === 0) {
+    return {
+      status: 'unavailable',
+      detail: 'Memory status probe is disabled because HMB_MEMORY_STATUS_PATHS is empty',
+    }
+  }
+
+  const missingPaths = []
+  for (const path of MEMORY_STATUS_PATHS) {
+    const url = getAgentUrl(path)
+    try {
+      const memory = await fetchJson(url, 1200, getAgentHeaders())
+      if (memory.response.ok) {
+        return {
+          status: 'ok',
+          detail: `Memory status endpoint is reachable at ${path}`,
+        }
+      }
+
+      if (memory.response.status === 401 || memory.response.status === 403) {
+        return {
+          status: 'warning',
+          detail: `Memory status endpoint requires Hermes Agent API key at ${path}. Set HMB_AGENT_API_KEY to enable this probe.`,
+        }
+      }
+
+      if (memory.response.status === 404) {
+        missingPaths.push(path)
+        continue
+      }
+
+      return {
+        status: 'warning',
+        detail: `Memory status endpoint returned HTTP ${memory.response.status} at ${path}`,
+      }
+    } catch {
+      return {
+        status: 'warning',
+        detail: `Memory status probe timed out or failed at ${path}`,
+      }
+    }
+  }
+
+  return {
+    status: 'unavailable',
+    detail: `Hermes Agent does not expose known memory status endpoints: ${missingPaths.join(', ')}`,
+  }
+}
+
 async function probeHermesAgent() {
   const now = Date.now()
   if (agentProbeCache.result && agentProbeCache.expiresAt > now) {
@@ -129,6 +190,8 @@ async function probeHermesAgent() {
     llmStatus: 'unavailable',
     llmDetail: 'Model list was not checked because Hermes Agent is unavailable',
     modelCount: 0,
+    memoryStatus: 'unavailable',
+    memoryDetail: 'Memory status was not checked because Hermes Agent is unavailable',
     usageStatus: 'unavailable',
     usageDetail: 'Token usage was not checked because Hermes Agent is unavailable',
   }
@@ -173,6 +236,10 @@ async function probeHermesAgent() {
       result.llmStatus = 'warning'
       result.llmDetail = 'Model list probe timed out or failed'
     }
+
+    const memory = await probeMemoryStatus()
+    result.memoryStatus = memory.status
+    result.memoryDetail = memory.detail
 
     try {
       const usage = await fetchJson(`${AGENT_URL}/v1/usage/summary`, 1200, getAgentHeaders())
@@ -316,7 +383,7 @@ async function getCapabilities() {
     runs: 'unavailable',
     sse: 'unavailable',
     llm: probe.llmStatus,
-    memory: 'unavailable',
+    memory: probe.memoryStatus,
     usage: probe.usageStatus,
     approval: 'unavailable',
     stop: 'unavailable',
@@ -344,6 +411,12 @@ async function getChecks() {
       label: 'LLM',
       status: probe.llmStatus,
       detail: probe.llmDetail,
+    },
+    {
+      key: 'memory',
+      label: 'Memory',
+      status: probe.memoryStatus,
+      detail: probe.memoryDetail,
     },
     {
       key: 'usage',
@@ -478,8 +551,8 @@ async function getAllowedFixAction(key) {
     },
     memory: {
       key: 'memory',
-      status: 'unavailable',
-      detail: 'Memory diagnostics require Hermes Agent integration in a later phase.',
+      status: probe.memoryStatus,
+      detail: probe.memoryDetail,
     },
     usage: {
       key: 'usage',

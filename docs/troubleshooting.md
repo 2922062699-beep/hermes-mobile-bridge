@@ -73,10 +73,30 @@ The report includes:
 
 - `HMB_AGENT_URL` if Bridge cannot reach Hermes Agent at the default local URL;
 - `HMB_AGENT_API_KEY` if Hermes Agent requires auth for `/v1/models` or `/v1/usage/summary`;
+- memory endpoint limitations if Hermes Agent does not expose a known read-only memory status endpoint;
 - token usage limitations if `/v1/usage/summary` is unavailable;
 - the Phase 1 boundary that Bridge does not take over chat runs, SSE, stop, or approval.
 
 Token usage warnings do not block chat. They only affect Dashboard usage display and diagnostics.
+
+## Memory Diagnostics
+
+Bridge only probes Memory through read-only GET requests. It does not create, edit, delete, or sync memory records.
+
+Default probe paths:
+
+```text
+/v1/memory/status,/memory/status,/v1/memory
+```
+
+If your Hermes Agent exposes a different read-only memory status endpoint, set it before starting Bridge:
+
+```powershell
+$env:HMB_MEMORY_STATUS_PATHS = "/v1/memory/status,/v1/memory"
+.\hermes-mobile.ps1 start
+```
+
+If Memory remains `unavailable`, chat can still work. The warning means Bridge cannot currently confirm memory status from the PC Agent.
 
 ## Pairing Code Expired
 
@@ -107,4 +127,4 @@ These are expected to show `unavailable` in Phase 1 because Bridge intentionally
 - Stop
 - Files
 
-Hermes Agent, LLM, and token usage can be `ok`, `warning`, or `unavailable` depending on whether the local Agent is reachable and whether `HMB_AGENT_API_KEY` is needed.
+Hermes Agent, LLM, Memory, and token usage can be `ok`, `warning`, or `unavailable` depending on whether the local Agent is reachable, which read-only endpoints it exposes, and whether `HMB_AGENT_API_KEY` is needed.

@@ -1,6 +1,6 @@
 # Hermes Mobile Bridge Protocol
 
-Version: `0.2`
+Version: `0.2.1`
 
 ## Product Boundary
 
@@ -142,7 +142,11 @@ The authenticated response includes private diagnostics:
     "agentDetail": "Hermes Agent is reachable at http://127.0.0.1:8642",
     "llmStatus": "warning",
     "llmDetail": "Model list requires Hermes Agent API key. Set HMB_AGENT_API_KEY to enable this probe.",
-    "modelCount": 0
+    "modelCount": 0,
+    "memoryStatus": "unavailable",
+    "memoryDetail": "Hermes Agent does not expose known memory status endpoints: /v1/memory/status, /memory/status, /v1/memory",
+    "usageStatus": "warning",
+    "usageDetail": "Token usage endpoint requires Hermes Agent API key. Set HMB_AGENT_API_KEY to enable this probe."
   }
 }
 ```
@@ -168,8 +172,21 @@ Agent probe rules:
 - set `HMB_AGENT_URL` to override the target;
 - Bridge probes `/health` without modifying Agent config;
 - Bridge probes `/v1/models` only as a read operation;
-- set `HMB_AGENT_API_KEY` if the Agent model endpoint requires auth;
+- Bridge probes memory status only through read-only GET requests;
+- set `HMB_AGENT_API_KEY` if Agent read-only diagnostics require auth;
 - if the target is Hermes Mobile Bridge itself, it is ignored as an Agent candidate.
+
+Default memory status probe paths:
+
+```text
+/v1/memory/status,/memory/status,/v1/memory
+```
+
+Override them before starting Bridge:
+
+```powershell
+$env:HMB_MEMORY_STATUS_PATHS = "/v1/memory/status,/v1/memory"
+```
 
 ## Models Passthrough
 
@@ -225,6 +242,19 @@ Credential boundary:
 
 Response shape is whatever Hermes Agent returns. Hermes Mobile currently expects a summary containing `today.totalTokens` or `today.total_tokens`.
 
+## Memory Diagnostics
+
+Memory is currently diagnostic-only. Bridge does not read, write, create, delete, or sync memory records.
+
+Bridge checks whether Hermes Agent exposes a read-only memory status endpoint by sending GET requests to `HMB_MEMORY_STATUS_PATHS`.
+
+Credential boundary:
+
+- the mobile `hm_` API key authorizes access to Bridge only;
+- Bridge never forwards the mobile API key to Hermes Agent;
+- if Hermes Agent needs auth, Bridge uses `HMB_AGENT_API_KEY`;
+- if Hermes Agent has no known memory status endpoint, Bridge reports memory as `unavailable`.
+
 ## Capabilities
 
 ```http
@@ -237,16 +267,18 @@ Response:
 ```json
 {
   "serverName": "Rick-PC",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "agent": {
     "agentUrl": "http://127.0.0.1:8642",
     "agentStatus": "ok",
-    "llmStatus": "warning"
+    "llmStatus": "warning",
+    "memoryStatus": "unavailable"
   },
   "capabilities": {
     "bridge": "ok",
     "agent": "ok",
     "llm": "warning",
+    "memory": "unavailable",
     "usage": "unavailable"
   },
   "checks": [

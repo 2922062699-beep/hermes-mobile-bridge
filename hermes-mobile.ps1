@@ -169,6 +169,13 @@ function Get-BridgeSetupHints {
   }
 
   if (
+    ($Result.capabilities -and $Result.capabilities.memory -ne "ok") -or
+    ($detailText -match "memory status")
+  ) {
+    $hints += "Memory diagnostics are read-only. If your Agent exposes a memory status endpoint, set HMB_MEMORY_STATUS_PATHS before starting Bridge."
+  }
+
+  if (
     $Result.capabilities -and
     (
       $Result.capabilities.runs -eq "unavailable" -or

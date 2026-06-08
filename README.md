@@ -82,7 +82,7 @@ If the phone cannot connect, run:
 The status output includes:
 
 - capability status;
-- detailed checks for Bridge, Hermes Agent, LLM models, and token usage;
+- detailed checks for Bridge, Hermes Agent, LLM models, Memory, and token usage;
 - setup hints such as `HMB_AGENT_API_KEY` or `HMB_AGENT_URL`;
 - phone URL, LAN IP, local health URL, and Windows Firewall hint.
 
@@ -111,6 +111,18 @@ $env:HMB_AGENT_API_KEY = "..."
 ```
 
 Without `HMB_AGENT_API_KEY`, Bridge can still report whether Hermes Agent `/health` is reachable. It reports LLM/model probing as `warning` when `/v1/models` requires auth.
+
+Bridge also probes Memory as a read-only status check. Default paths:
+
+```text
+/v1/memory/status,/memory/status,/v1/memory
+```
+
+Override them before starting Bridge if your PC Agent exposes a different read-only memory status endpoint:
+
+```powershell
+$env:HMB_MEMORY_STATUS_PATHS = "/v1/memory/status,/v1/memory"
+```
 
 Use local diagnostics after Bridge is running:
 
@@ -155,6 +167,7 @@ Implemented:
 - `GET /v1/usage/summary` passthrough
 - local Hermes Agent `/health` probe
 - local Hermes Agent `/v1/models` probe when `HMB_AGENT_API_KEY` is available
+- local Hermes Agent memory status probe through read-only GET
 - local Hermes Agent `/v1/usage/summary` probe when available
 
 Not implemented yet:
