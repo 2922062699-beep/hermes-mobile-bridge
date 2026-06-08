@@ -16,6 +16,13 @@ const PAIRING_TTL_MS = Number.parseInt(
   process.env.HMB_PAIRING_TTL_MS || '300000',
   10
 )
+let qrcode = null
+try {
+  qrcode = (await import('qrcode-terminal')).default
+} catch {
+  console.warn('[bridge] qrcode-terminal not available, QR rendering disabled')
+}
+
 const serverName = os.hostname()
 let pairingCode = createPairingCode()
 let pairingCreatedAt = Date.now()
@@ -63,6 +70,25 @@ function getMobileAgentGatewayUrl() {
   }
 }
 
+function getMobileBridgeGatewayUrl() {
+  try {
+    const url = new URL(PUBLIC_URL)
+    const hostname = url.hostname.toLowerCase()
+    if (
+      hostname === '127.0.0.1' ||
+      hostname === 'localhost' ||
+      hostname === '::1' ||
+      hostname === '0.0.0.0'
+    ) {
+      url.hostname = getLanIp()
+    }
+
+    return url.toString().replace(/\/+$/, '')
+  } catch {
+    return `http://${getLanIp()}:${PORT}`
+  }
+}
+
 function createPairingCode() {
   return crypto.randomInt(0, 1000000).toString().padStart(6, '0')
 }
@@ -81,6 +107,18 @@ function isPairingExpired() {
 
 function isPairingAvailable() {
   return !pairingUsed && !isPairingExpired()
+}
+
+function createPairingQrPayload(bridgeUrl, code) {
+  return JSON.stringify({ v: 1, b: bridgeUrl, c: code })
+}
+
+function printPairingQr(bridgeUrl, code) {
+  if (!qrcode) return
+
+  console.log('Scan with Hermes Mobile:')
+  qrcode.generate(createPairingQrPayload(bridgeUrl, code), { small: true })
+  console.log('')
 }
 
 function getIdentity(record) {
@@ -779,13 +817,15 @@ const server = http.createServer((request, response) => {
 })
 
 server.listen(PORT, '0.0.0.0', () => {
+  const bridgeUrl = getMobileBridgeGatewayUrl()
   console.log('')
   console.log('Hermes Mobile Bridge is running.')
   console.log('')
-  console.log(`Gateway URL: ${PUBLIC_URL}`)
+  console.log(`Gateway URL: ${bridgeUrl}`)
   console.log(`Pairing Code: ${pairingCode}`)
   console.log(`Pairing Expires: ${getPairingExpiresInSeconds()} seconds`)
   console.log('')
+  printPairingQr(bridgeUrl, pairingCode)
   console.log('Open HermesMobile:')
   console.log('1. Enter Gateway URL')
   console.log('2. Enter Pairing Code')
