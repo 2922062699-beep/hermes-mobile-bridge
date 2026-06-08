@@ -1,5 +1,5 @@
 param(
-  [ValidateSet("start", "doctor", "status")]
+  [ValidateSet("start", "doctor", "status", "qr")]
   [string]$Command = "start",
   [int]$Port = 8642
 )
@@ -307,6 +307,46 @@ function Write-BridgeSetupHints {
   }
 }
 
+function Read-PairingQrPayload {
+  param([string]$QrPayload)
+
+  try {
+    return $QrPayload | ConvertFrom-Json
+  } catch {
+    return $null
+  }
+}
+
+function Write-PairingQr {
+  param([string]$QrPayload)
+
+  $encodedPayload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($QrPayload))
+  $nodeScript = @"
+const payload = Buffer.from(process.argv[1], 'base64').toString('utf8');
+const qrcode = (await import('qrcode-terminal')).default;
+qrcode.generate(payload, { small: true });
+"@
+
+  Write-Host "Scan with Hermes Mobile:"
+  Push-Location $ScriptDir
+  try {
+    $qrOutput = & node --input-type=module -e $nodeScript $encodedPayload 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      $log = ($qrOutput | Out-String).Trim()
+      throw "qrcode-terminal failed: $log"
+    }
+
+    $qrOutput | ForEach-Object { Write-Host $_ }
+    Write-Host ""
+  } catch {
+    Write-Host "QR rendering unavailable. Pair manually with the Gateway URL and Pairing Code above."
+    Write-Host $_.Exception.Message
+    Write-Host ""
+  } finally {
+    Pop-Location
+  }
+}
+
 $NodeVersion = Test-Node
 
 if ($Command -eq "start") {
@@ -356,6 +396,50 @@ if ($Command -eq "doctor" -or $Command -eq "status") {
       Write-Host ""
       Write-Host "If the phone cannot connect, keep Bridge running and check same Wi-Fi/VPN plus Windows Firewall private-network access for Node.js."
     }
+  } catch {
+    Write-Host "Hermes Mobile Bridge is not reachable at $url"
+    Write-Host $_.Exception.Message
+    exit 1
+  }
+}
+
+if ($Command -eq "qr") {
+  $url = "http://127.0.0.1:$Port/v1/local/status"
+  try {
+    $result = Invoke-RestMethod -Method GET -Uri $url -TimeoutSec 5
+
+    if (-not $result.pairing -or -not $result.pairing.available) {
+      Write-Host "Hermes Mobile Bridge pairing QR is not available."
+      if ($result.pairing -and $result.pairing.used) {
+        Write-Host "Pairing code has already been used."
+      } elseif ($result.pairing -and $result.pairing.expiresInSeconds -le 0) {
+        Write-Host "Pairing code has expired."
+      }
+      Write-Host "Restart Bridge with: .\hermes-mobile.ps1 start -Port $Port"
+      exit 1
+    }
+
+    if (-not $result.pairing.qrPayload) {
+      Write-Host "Bridge did not return a QR payload. Update or restart Hermes Mobile Bridge, then retry."
+      exit 1
+    }
+
+    $payload = Read-PairingQrPayload $result.pairing.qrPayload
+    if (-not $payload -or -not $payload.b -or -not $payload.c) {
+      Write-Host "Bridge returned an invalid QR payload. Restart Hermes Mobile Bridge, then retry."
+      exit 1
+    }
+
+    Write-Host "Hermes Mobile Bridge pairing QR"
+    Write-Host ""
+    Write-Host "Gateway URL: $($payload.b)"
+    Write-Host "Pairing Code: $($payload.c)"
+    if ($result.pairing.expiresInSeconds -ne $null) {
+      Write-Host "Pairing expires in: $($result.pairing.expiresInSeconds)s"
+    }
+    Write-Host ""
+    Write-PairingQr $result.pairing.qrPayload
+    Write-Host "Or pair manually with the values above."
   } catch {
     Write-Host "Hermes Mobile Bridge is not reachable at $url"
     Write-Host $_.Exception.Message
