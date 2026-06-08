@@ -2,7 +2,7 @@ import http from 'node:http'
 import os from 'node:os'
 import crypto from 'node:crypto'
 
-const VERSION = '0.2.1'
+const VERSION = '0.2.2'
 const PORT = Number.parseInt(process.env.HMB_PORT || '8642', 10)
 const PUBLIC_URL = process.env.HMB_PUBLIC_URL || `http://127.0.0.1:${PORT}`
 const AGENT_URL = (process.env.HMB_AGENT_URL || 'http://127.0.0.1:8642').replace(/\/+$/, '')
@@ -42,6 +42,25 @@ function getLanIp() {
   }
 
   return '127.0.0.1'
+}
+
+function getMobileAgentGatewayUrl() {
+  try {
+    const url = new URL(AGENT_URL)
+    const hostname = url.hostname.toLowerCase()
+    if (
+      hostname === '127.0.0.1' ||
+      hostname === 'localhost' ||
+      hostname === '::1' ||
+      hostname === '0.0.0.0'
+    ) {
+      url.hostname = getLanIp()
+    }
+
+    return url.toString().replace(/\/+$/, '')
+  } catch {
+    return AGENT_URL
+  }
 }
 
 function createPairingCode() {
@@ -642,8 +661,12 @@ async function handlePair(request, response) {
   pairingUsed = true
   writeJson(response, 200, {
     apiKey: mobileApiKey,
+    bridgeApiKey: mobileApiKey,
     serverName,
     gatewayUrl: PUBLIC_URL,
+    bridgeGatewayUrl: PUBLIC_URL,
+    agentGatewayUrl: getMobileAgentGatewayUrl(),
+    agentApiKey: process.env.HMB_AGENT_API_KEY || undefined,
     capabilities: await getCapabilities(),
   })
 }

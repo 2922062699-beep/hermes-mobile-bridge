@@ -51,6 +51,15 @@ HermesMobile exchanges the code for an API key through:
 POST /v1/mobile/pair
 ```
 
+The pairing response separates the two channels:
+
+```text
+Chat:        agentGatewayUrl + agentApiKey
+Diagnostics: bridgeGatewayUrl + bridgeApiKey
+```
+
+Bridge is not used as the chat gateway. Hermes Mobile should continue sending chat traffic directly to Hermes Agent Gateway.
+
 ## Commands
 
 After remote install, the files are stored in:
@@ -111,6 +120,8 @@ $env:HMB_AGENT_API_KEY = "..."
 ```
 
 Without `HMB_AGENT_API_KEY`, Bridge can still report whether Hermes Agent `/health` is reachable. It reports LLM/model probing as `warning` when `/v1/models` requires auth.
+
+When `HMB_AGENT_API_KEY` is set, Bridge includes it as `agentApiKey` in the pairing response so Hermes Mobile can keep chat traffic on the direct Agent Gateway path.
 
 Bridge also probes Memory as a read-only status check. Default paths:
 

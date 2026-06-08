@@ -1,6 +1,6 @@
 # Hermes Mobile Bridge Protocol
 
-Version: `0.2.1`
+Version: `0.2.2`
 
 ## Product Boundary
 
@@ -55,8 +55,12 @@ Response:
 ```json
 {
   "apiKey": "hm_xxxxx",
+  "bridgeApiKey": "hm_xxxxx",
   "serverName": "Rick-PC",
   "gatewayUrl": "http://192.168.31.191:8642",
+  "bridgeGatewayUrl": "http://192.168.31.191:8642",
+  "agentGatewayUrl": "http://192.168.31.191:8643",
+  "agentApiKey": "agent_api_key_if_HMB_AGENT_API_KEY_is_set",
   "capabilities": {
     "bridge": "ok",
     "agent": "unavailable",
@@ -71,6 +75,22 @@ Response:
   }
 }
 ```
+
+Field meaning:
+
+- `gatewayUrl` and `apiKey` are kept for backward compatibility and point to Bridge.
+- `bridgeGatewayUrl` and `bridgeApiKey` are the Bridge diagnostic channel.
+- `agentGatewayUrl` is the phone-reachable Hermes Agent Gateway URL for direct chat.
+- `agentApiKey` is included only when `HMB_AGENT_API_KEY` is set before starting Bridge.
+
+Hermes Mobile should use:
+
+```text
+Chat:        agentGatewayUrl + agentApiKey
+Diagnostics: bridgeGatewayUrl + bridgeApiKey
+```
+
+Bridge remains outside the chat path.
 
 Pairing code rules:
 
@@ -267,7 +287,7 @@ Response:
 ```json
 {
   "serverName": "Rick-PC",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "agent": {
     "agentUrl": "http://127.0.0.1:8642",
     "agentStatus": "ok",
