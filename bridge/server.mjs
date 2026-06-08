@@ -2,7 +2,7 @@ import http from 'node:http'
 import os from 'node:os'
 import crypto from 'node:crypto'
 
-const VERSION = '0.2.2'
+const VERSION = '0.2.3'
 const PORT = Number.parseInt(process.env.HMB_PORT || '8642', 10)
 const PUBLIC_URL = process.env.HMB_PUBLIC_URL || `http://127.0.0.1:${PORT}`
 const AGENT_URL = (process.env.HMB_AGENT_URL || 'http://127.0.0.1:8642').replace(/\/+$/, '')
@@ -122,6 +122,14 @@ function getAgentHeaders() {
   return process.env.HMB_AGENT_API_KEY
     ? { Authorization: `Bearer ${process.env.HMB_AGENT_API_KEY}` }
     : {}
+}
+
+function isAgentChatCredentialMissing(probe) {
+  return (
+    !process.env.HMB_AGENT_API_KEY &&
+    typeof probe.llmDetail === 'string' &&
+    probe.llmDetail.includes('HMB_AGENT_API_KEY')
+  )
 }
 
 function parseModelList(value) {
@@ -658,6 +666,17 @@ async function handlePair(request, response) {
     return
   }
 
+  const probe = await probeHermesAgent()
+  if (isAgentChatCredentialMissing(probe)) {
+    writeJson(response, 424, {
+      error: 'Hermes Agent requires HMB_AGENT_API_KEY before Bridge pairing',
+      detail: probe.llmDetail,
+      setup: 'Set HMB_AGENT_API_KEY in the same PowerShell window, restart Bridge, then pair again.',
+      agentGatewayUrl: getMobileAgentGatewayUrl(),
+    })
+    return
+  }
+
   pairingUsed = true
   writeJson(response, 200, {
     apiKey: mobileApiKey,
@@ -667,7 +686,9 @@ async function handlePair(request, response) {
     bridgeGatewayUrl: PUBLIC_URL,
     agentGatewayUrl: getMobileAgentGatewayUrl(),
     agentApiKey: process.env.HMB_AGENT_API_KEY || undefined,
+    agent: probe,
     capabilities: await getCapabilities(),
+    checks: await getChecks(),
   })
 }
 

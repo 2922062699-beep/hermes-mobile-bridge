@@ -123,6 +123,8 @@ Without `HMB_AGENT_API_KEY`, Bridge can still report whether Hermes Agent `/heal
 
 When `HMB_AGENT_API_KEY` is set, Bridge includes it as `agentApiKey` in the pairing response so Hermes Mobile can keep chat traffic on the direct Agent Gateway path.
 
+If Hermes Agent requires auth for `/v1/models` and `HMB_AGENT_API_KEY` is missing, Bridge rejects pairing before the pairing code is consumed. Set `HMB_AGENT_API_KEY`, restart Bridge, then pair again.
+
 Bridge also probes Memory as a read-only status check. Default paths:
 
 ```text

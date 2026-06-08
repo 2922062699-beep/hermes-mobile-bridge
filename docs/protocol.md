@@ -1,6 +1,6 @@
 # Hermes Mobile Bridge Protocol
 
-Version: `0.2.2`
+Version: `0.2.3`
 
 ## Product Boundary
 
@@ -61,6 +61,12 @@ Response:
   "bridgeGatewayUrl": "http://192.168.31.191:8642",
   "agentGatewayUrl": "http://192.168.31.191:8643",
   "agentApiKey": "agent_api_key_if_HMB_AGENT_API_KEY_is_set",
+  "agent": {
+    "agentUrl": "http://127.0.0.1:8642",
+    "agentStatus": "ok",
+    "llmStatus": "ok",
+    "usageStatus": "warning"
+  },
   "capabilities": {
     "bridge": "ok",
     "agent": "unavailable",
@@ -72,7 +78,15 @@ Response:
     "approval": "unavailable",
     "stop": "unavailable",
     "files": "unavailable"
-  }
+  },
+  "checks": [
+    {
+      "key": "bridge",
+      "label": "Bridge reachable",
+      "status": "ok",
+      "detail": "Hermes Mobile Bridge is running"
+    }
+  ]
 }
 ```
 
@@ -82,6 +96,7 @@ Field meaning:
 - `bridgeGatewayUrl` and `bridgeApiKey` are the Bridge diagnostic channel.
 - `agentGatewayUrl` is the phone-reachable Hermes Agent Gateway URL for direct chat.
 - `agentApiKey` is included only when `HMB_AGENT_API_KEY` is set before starting Bridge.
+- `agent`, `capabilities`, and `checks` describe current PC-side diagnostics at pairing time.
 
 Hermes Mobile should use:
 
@@ -91,6 +106,19 @@ Diagnostics: bridgeGatewayUrl + bridgeApiKey
 ```
 
 Bridge remains outside the chat path.
+
+If Hermes Agent requires auth for the model list and Bridge was started without `HMB_AGENT_API_KEY`, pairing fails before the code is consumed:
+
+```json
+{
+  "error": "Hermes Agent requires HMB_AGENT_API_KEY before Bridge pairing",
+  "detail": "Model list requires Hermes Agent API key. Set HMB_AGENT_API_KEY to enable this probe.",
+  "setup": "Set HMB_AGENT_API_KEY in the same PowerShell window, restart Bridge, then pair again.",
+  "agentGatewayUrl": "http://192.168.31.191:8642"
+}
+```
+
+HTTP status: `424 Failed Dependency`.
 
 Pairing code rules:
 
@@ -287,7 +315,7 @@ Response:
 ```json
 {
   "serverName": "Rick-PC",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "agent": {
     "agentUrl": "http://127.0.0.1:8642",
     "agentStatus": "ok",
