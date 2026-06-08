@@ -87,6 +87,9 @@ function getDetailedStatus() {
   return {
     status: 'ok',
     version: VERSION,
+    service: 'hermes-mobile-bridge',
+    name: 'Hermes Mobile Bridge',
+    platform: 'windows',
     serverName,
     gatewayUrl: PUBLIC_URL,
     pairing: {
@@ -126,7 +129,13 @@ async function route(request, response) {
   const url = new URL(request.url || '/', `http://${request.headers.host}`)
 
   if (request.method === 'GET' && url.pathname === '/health') {
-    writeJson(response, 200, { status: 'ok', version: VERSION })
+    writeJson(response, 200, {
+      status: 'ok',
+      version: VERSION,
+      service: 'hermes-mobile-bridge',
+      name: 'Hermes Mobile Bridge',
+      platform: 'windows',
+    })
     return
   }
 
