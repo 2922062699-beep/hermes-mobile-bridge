@@ -169,6 +169,28 @@ Response:
 }
 ```
 
+## Token Usage Passthrough
+
+```http
+GET /v1/usage/summary
+Authorization: Bearer hm_xxxxx
+```
+
+Bridge forwards this read-only request to:
+
+```text
+{HMB_AGENT_URL}/v1/usage/summary
+```
+
+Credential boundary:
+
+- the mobile `hm_` API key authorizes access to Bridge only;
+- Bridge never forwards the mobile API key to Hermes Agent;
+- if Hermes Agent needs auth, Bridge uses `HMB_AGENT_API_KEY`;
+- if Hermes Agent has no usage endpoint, Bridge returns `502` with a setup error.
+
+Response shape is whatever Hermes Agent returns. Hermes Mobile currently expects a summary containing `today.totalTokens` or `today.total_tokens`.
+
 ## Capabilities
 
 ```http
@@ -190,7 +212,8 @@ Response:
   "capabilities": {
     "bridge": "ok",
     "agent": "ok",
-    "llm": "warning"
+    "llm": "warning",
+    "usage": "unavailable"
   },
   "checks": [
     {

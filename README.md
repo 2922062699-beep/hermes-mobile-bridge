@@ -111,9 +111,10 @@ After mobile pairing, Bridge also exposes:
 
 ```text
 GET /v1/models
+GET /v1/usage/summary
 ```
 
-This endpoint forwards to the local Hermes Agent model list. The mobile `hm_` API key is only used to authorize access to Bridge; it is never forwarded to Hermes Agent. If Hermes Agent requires auth, set `HMB_AGENT_API_KEY` on the PC before starting Bridge.
+These endpoints forward read-only requests to the local Hermes Agent. The mobile `hm_` API key is only used to authorize access to Bridge; it is never forwarded to Hermes Agent. If Hermes Agent requires auth, set `HMB_AGENT_API_KEY` on the PC before starting Bridge.
 
 ## Phase 1 Scope
 
@@ -126,15 +127,17 @@ Implemented:
 - `POST /v1/mobile/doctor`
 - `POST /v1/mobile/fix`
 - `GET /v1/models` passthrough
+- `GET /v1/usage/summary` passthrough
 - local Hermes Agent `/health` probe
 - local Hermes Agent `/v1/models` probe when `HMB_AGENT_API_KEY` is available
+- local Hermes Agent `/v1/usage/summary` probe when available
 
 Not implemented yet:
 
 - `/v1/runs` passthrough;
 - SSE passthrough;
 - approval passthrough;
-- token usage aggregation;
+- token usage aggregation fallback;
 - active Hermes Agent adaptation and automated fix actions.
 
 ## Security Boundary

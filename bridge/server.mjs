@@ -129,6 +129,8 @@ async function probeHermesAgent() {
     llmStatus: 'unavailable',
     llmDetail: 'Model list was not checked because Hermes Agent is unavailable',
     modelCount: 0,
+    usageStatus: 'unavailable',
+    usageDetail: 'Token usage was not checked because Hermes Agent is unavailable',
   }
 
   try {
@@ -170,6 +172,26 @@ async function probeHermesAgent() {
     } catch {
       result.llmStatus = 'warning'
       result.llmDetail = 'Model list probe timed out or failed'
+    }
+
+    try {
+      const usage = await fetchJson(`${AGENT_URL}/v1/usage/summary`, 1200, getAgentHeaders())
+      if (usage.response.ok) {
+        result.usageStatus = 'ok'
+        result.usageDetail = 'Token usage endpoint is reachable'
+      } else if (usage.response.status === 401 || usage.response.status === 403) {
+        result.usageStatus = 'warning'
+        result.usageDetail = 'Token usage endpoint requires Hermes Agent API key. Set HMB_AGENT_API_KEY to enable this probe.'
+      } else if (usage.response.status === 404) {
+        result.usageStatus = 'unavailable'
+        result.usageDetail = 'Hermes Agent does not expose /v1/usage/summary'
+      } else {
+        result.usageStatus = 'warning'
+        result.usageDetail = `Token usage endpoint returned HTTP ${usage.response.status}`
+      }
+    } catch {
+      result.usageStatus = 'warning'
+      result.usageDetail = 'Token usage probe timed out or failed'
     }
   }
 
@@ -229,6 +251,63 @@ async function handleModels(response) {
   writeJson(response, 200, models.data)
 }
 
+async function handleUsageSummary(response) {
+  const probe = await probeHermesAgent()
+  if (probe.agentStatus !== 'ok') {
+    writeJson(response, 502, {
+      error: 'Hermes Agent is not reachable from Bridge',
+      detail: probe.agentDetail,
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  let usage
+  try {
+    usage = await fetchJson(`${AGENT_URL}/v1/usage/summary`, 3000, getAgentHeaders())
+  } catch {
+    writeJson(response, 502, {
+      error: 'Hermes Agent token usage probe failed',
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  if (usage.response.status === 401 || usage.response.status === 403) {
+    writeJson(response, 502, {
+      error: 'Hermes Agent token usage requires HMB_AGENT_API_KEY on the PC Bridge',
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  if (usage.response.status === 404) {
+    writeJson(response, 502, {
+      error: 'Hermes Agent does not expose /v1/usage/summary',
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  if (!usage.response.ok) {
+    writeJson(response, 502, {
+      error: `Hermes Agent token usage returned HTTP ${usage.response.status}`,
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  if (usage.data === undefined) {
+    writeJson(response, 502, {
+      error: 'Hermes Agent returned a non-JSON token usage summary',
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  writeJson(response, 200, usage.data)
+}
+
 async function getCapabilities() {
   const probe = await probeHermesAgent()
   return {
@@ -238,7 +317,7 @@ async function getCapabilities() {
     sse: 'unavailable',
     llm: probe.llmStatus,
     memory: 'unavailable',
-    usage: 'unavailable',
+    usage: probe.usageStatus,
     approval: 'unavailable',
     stop: 'unavailable',
     files: 'unavailable',
@@ -265,6 +344,12 @@ async function getChecks() {
       label: 'LLM',
       status: probe.llmStatus,
       detail: probe.llmDetail,
+    },
+    {
+      key: 'usage',
+      label: 'Token usage',
+      status: probe.usageStatus,
+      detail: probe.usageDetail,
     },
   ]
 }
@@ -527,6 +612,11 @@ async function route(request, response) {
 
   if (request.method === 'GET' && url.pathname === '/v1/models') {
     await handleModels(response)
+    return
+  }
+
+  if (request.method === 'GET' && url.pathname === '/v1/usage/summary') {
+    await handleUsageSummary(response)
     return
   }
 
