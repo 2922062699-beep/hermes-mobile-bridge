@@ -1,6 +1,6 @@
 # Hermes Mobile Bridge Protocol
 
-Version: `0.3.1`
+Version: `0.4.0`
 
 ## Product Boundary
 
@@ -138,6 +138,12 @@ If Hermes Agent requires auth for the model list and Bridge was started without 
 
 HTTP status: `424 Failed Dependency`.
 
+The `setup` text is platform-aware. On macOS and Linux, Bridge returns the bash/zsh form:
+
+```text
+Run 'export HMB_AGENT_API_KEY=<your-key>' in the same terminal, restart Bridge, then pair again.
+```
+
 Pairing code rules:
 
 - 6 digits;
@@ -224,8 +230,8 @@ The authenticated response includes private diagnostics:
 GET /v1/local/status
 ```
 
-This endpoint is for `hermes-mobile.ps1 status` and `hermes-mobile.ps1 doctor`.
-It is also used by `hermes-mobile.ps1 qr` to reprint the current QR without restarting Bridge.
+This endpoint is for `hermes-mobile.ps1 status`, `hermes-mobile.ps1 doctor`, `hermes-mobile.sh status`, and `hermes-mobile.sh doctor`.
+It is also used by `hermes-mobile.ps1 qr` and `hermes-mobile.sh qr` to reprint the current QR without restarting Bridge.
 
 Rules:
 
@@ -245,6 +251,20 @@ Agent probe rules:
 - set `HMB_AGENT_API_KEY` if Agent read-only diagnostics require auth;
 - if the target is Hermes Mobile Bridge itself, it is ignored as an Agent candidate.
 
+PowerShell setup examples:
+
+```powershell
+$env:HMB_AGENT_URL = "http://127.0.0.1:8642"
+$env:HMB_AGENT_API_KEY = "<Agent API Key>"
+```
+
+bash/zsh setup examples:
+
+```bash
+export HMB_AGENT_URL="http://127.0.0.1:8642"
+export HMB_AGENT_API_KEY="<Agent API Key>"
+```
+
 Default memory status probe paths:
 
 ```text
@@ -253,8 +273,16 @@ Default memory status probe paths:
 
 Override them before starting Bridge:
 
+PowerShell:
+
 ```powershell
 $env:HMB_MEMORY_STATUS_PATHS = "/v1/memory/status,/v1/memory"
+```
+
+bash/zsh:
+
+```bash
+export HMB_MEMORY_STATUS_PATHS="/v1/memory/status,/v1/memory"
 ```
 
 ## Models Passthrough
@@ -336,7 +364,7 @@ Response:
 ```json
 {
   "serverName": "Rick-PC",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "agent": {
     "agentUrl": "http://127.0.0.1:8642",
     "agentStatus": "ok",
