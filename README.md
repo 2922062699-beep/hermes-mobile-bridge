@@ -79,7 +79,12 @@ If the phone cannot connect, run:
 .\hermes-mobile.ps1 status
 ```
 
-The status output includes the phone URL, LAN IP, local health URL, and Windows Firewall hint.
+The status output includes:
+
+- capability status;
+- detailed checks for Bridge, Hermes Agent, LLM models, and token usage;
+- setup hints such as `HMB_AGENT_API_KEY` or `HMB_AGENT_URL`;
+- phone URL, LAN IP, local health URL, and Windows Firewall hint.
 
 See [docs/troubleshooting.md](docs/troubleshooting.md).
 
@@ -106,6 +111,14 @@ $env:HMB_AGENT_API_KEY = "..."
 ```
 
 Without `HMB_AGENT_API_KEY`, Bridge can still report whether Hermes Agent `/health` is reachable. It reports LLM/model probing as `warning` when `/v1/models` requires auth.
+
+Use local diagnostics after Bridge is running:
+
+```powershell
+.\hermes-mobile.ps1 status
+```
+
+`status` and `doctor` call the loopback-only `GET /v1/local/status` endpoint. This exposes PC-side details to the terminal without making them public on the LAN.
 
 ## Product Boundary
 

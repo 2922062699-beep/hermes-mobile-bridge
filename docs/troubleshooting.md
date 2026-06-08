@@ -48,6 +48,36 @@ Run:
 
 The output shows the local health URL, phone URL, LAN IP, and firewall hint.
 
+## Status / Doctor Output
+
+Run:
+
+```powershell
+.\hermes-mobile.ps1 status
+```
+
+or:
+
+```powershell
+.\hermes-mobile.ps1 doctor
+```
+
+The report includes:
+
+- `Capabilities`: high-level module status exposed to Hermes Mobile;
+- `Checks`: detailed Bridge, Hermes Agent, LLM, and token usage probe results;
+- `Next steps`: concrete setup hints derived from failed or warning checks;
+- `Network`: phone URL, local health URL, LAN IP, and firewall hint.
+
+`Next steps` can mention:
+
+- `HMB_AGENT_URL` if Bridge cannot reach Hermes Agent at the default local URL;
+- `HMB_AGENT_API_KEY` if Hermes Agent requires auth for `/v1/models` or `/v1/usage/summary`;
+- token usage limitations if `/v1/usage/summary` is unavailable;
+- the Phase 1 boundary that Bridge does not take over chat runs, SSE, stop, or approval.
+
+Token usage warnings do not block chat. They only affect Dashboard usage display and diagnostics.
+
 ## Pairing Code Expired
 
 Pairing codes expire after 5 minutes and are invalidated after successful pairing.
@@ -66,16 +96,15 @@ The mobile API key is generated per Bridge process in Phase 1.
 
 ## Capabilities Are Unavailable
 
-Phase 1 only proves that Hermes Mobile can reach the Bridge.
+Phase 1 proves that Hermes Mobile can reach the Bridge and that the Bridge can diagnose selected PC-side modules.
 
-These are expected to show `unavailable` until Hermes Agent adaptation is implemented:
+These are expected to show `unavailable` in Phase 1 because Bridge intentionally does not take over chat traffic:
 
-- Hermes Agent
 - Runs
 - SSE
-- LLM
 - Memory
-- Token usage
 - Approval
 - Stop
 - Files
+
+Hermes Agent, LLM, and token usage can be `ok`, `warning`, or `unavailable` depending on whether the local Agent is reachable and whether `HMB_AGENT_API_KEY` is needed.

@@ -98,6 +98,106 @@ function Write-NetworkHelp {
   Write-Host "  3. Allow Node.js through Windows Firewall for private networks."
 }
 
+function Write-BridgeCapabilities {
+  param($Capabilities)
+
+  Write-Host ""
+  Write-Host "Capabilities:"
+  if (-not $Capabilities) {
+    Write-Host "  unavailable"
+    return
+  }
+
+  $Capabilities.PSObject.Properties | ForEach-Object {
+    Write-Host "  $($_.Name): $($_.Value)"
+  }
+}
+
+function Write-BridgeChecks {
+  param($Checks)
+
+  Write-Host ""
+  Write-Host "Checks:"
+  if (-not $Checks) {
+    Write-Host "  unavailable"
+    return
+  }
+
+  foreach ($check in @($Checks)) {
+    $label = if ($check.label) { $check.label } else { $check.key }
+    $status = if ($check.status) { $check.status } else { "unknown" }
+    Write-Host "  [$status] $label"
+    if ($check.detail) {
+      Write-Host "    $($check.detail)"
+    }
+  }
+}
+
+function Get-BridgeSetupHints {
+  param($Result)
+
+  $hints = @()
+  $details = @()
+
+  if ($Result.agent) {
+    if ($Result.agent.agentDetail) { $details += [string]$Result.agent.agentDetail }
+    if ($Result.agent.llmDetail) { $details += [string]$Result.agent.llmDetail }
+    if ($Result.agent.usageDetail) { $details += [string]$Result.agent.usageDetail }
+  }
+
+  if ($Result.checks) {
+    foreach ($check in @($Result.checks)) {
+      if ($check.detail) { $details += [string]$check.detail }
+    }
+  }
+
+  $detailText = $details -join " "
+
+  if ($detailText -match "HMB_AGENT_API_KEY") {
+    $hints += "Set HMB_AGENT_API_KEY before starting Bridge if Hermes Agent requires auth for models or token usage."
+  }
+
+  if ($detailText -match "not reachable") {
+    $hints += "Start Hermes Agent Gateway, or set HMB_AGENT_URL to the correct local Agent URL before starting Bridge."
+  }
+
+  if (
+    ($Result.capabilities -and $Result.capabilities.usage -ne "ok") -or
+    ($detailText -match "/v1/usage/summary")
+  ) {
+    $hints += "Token usage is optional for chat. It only affects Dashboard usage display and diagnostics."
+  }
+
+  if (
+    $Result.capabilities -and
+    (
+      $Result.capabilities.runs -eq "unavailable" -or
+      $Result.capabilities.sse -eq "unavailable" -or
+      $Result.capabilities.stop -eq "unavailable" -or
+      $Result.capabilities.approval -eq "unavailable"
+    )
+  ) {
+    $hints += "Bridge intentionally does not take over chat traffic in Phase 1. Keep Hermes Mobile chat pointed at Hermes Agent Gateway."
+  }
+
+  return $hints | Select-Object -Unique
+}
+
+function Write-BridgeSetupHints {
+  param($Result)
+
+  $hints = @(Get-BridgeSetupHints $Result)
+  if ($hints.Count -eq 0) {
+    return
+  }
+
+  Write-Host ""
+  Write-Host "Next steps:"
+  for ($index = 0; $index -lt $hints.Count; $index++) {
+    Write-Host "  $($index + 1). $($hints[$index])"
+  }
+}
+
 $NodeVersion = Test-Node
 
 if ($Command -eq "start") {
@@ -132,11 +232,9 @@ if ($Command -eq "doctor" -or $Command -eq "status") {
     if ($result.pairing.expiresInSeconds -ne $null) {
       Write-Host "Pairing expires in: $($result.pairing.expiresInSeconds)s"
     }
-    Write-Host ""
-    Write-Host "Capabilities:"
-    $result.capabilities.PSObject.Properties | ForEach-Object {
-      Write-Host "  $($_.Name): $($_.Value)"
-    }
+    Write-BridgeCapabilities $result.capabilities
+    Write-BridgeChecks $result.checks
+    Write-BridgeSetupHints $result
     if ($result.network) {
       Write-Host ""
       Write-Host "Network:"
