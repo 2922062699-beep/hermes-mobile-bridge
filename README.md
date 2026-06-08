@@ -39,6 +39,7 @@ Hermes Mobile Bridge is running.
 Gateway URL: http://192.168.31.191:8642
 Pairing Code: 482913
 Pairing Expires: 300 seconds
+QR Payload: hmb://pair?v=1&b=http%3A%2F%2F192.168.31.191%3A8642&c=482913
 
 Scan with Hermes Mobile:
 <terminal QR code>

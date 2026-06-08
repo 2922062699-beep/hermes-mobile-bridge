@@ -462,6 +462,7 @@ if ($Command -eq "qr") {
     if ($result.pairing.expiresInSeconds -ne $null) {
       Write-Host "Pairing expires in: $($result.pairing.expiresInSeconds)s"
     }
+    Write-Host "QR Payload: $($result.pairing.qrPayload)"
     Write-Host ""
     Write-PairingQr $result.pairing.qrPayload
     Write-Host "Or pair manually with the values above."

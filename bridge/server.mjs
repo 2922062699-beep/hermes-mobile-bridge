@@ -118,6 +118,9 @@ function createPairingQrPayload(bridgeUrl, code) {
 }
 
 function printPairingQr(bridgeUrl, code) {
+  const payload = createPairingQrPayload(bridgeUrl, code)
+  console.log(`QR Payload: ${payload}`)
+
   if (!qrcode) {
     console.log('QR rendering unavailable. Pair manually with the Gateway URL and Pairing Code above.')
     console.log('')
@@ -126,7 +129,7 @@ function printPairingQr(bridgeUrl, code) {
 
   try {
     console.log('Scan with Hermes Mobile:')
-    qrcode.generate(createPairingQrPayload(bridgeUrl, code), { small: true })
+    qrcode.generate(payload, { small: true })
     console.log('')
   } catch {
     console.warn('[bridge] QR rendering failed. Pair manually with the Gateway URL and Pairing Code above.')
