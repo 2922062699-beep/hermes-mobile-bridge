@@ -139,7 +139,7 @@ function getPairingStatus({ includeQrPayload = false } = {}) {
     used: pairingUsed,
   }
 
-  if (includeQrPayload && pairing.available) {
+  if (includeQrPayload) {
     pairing.qrPayload = createPairingQrPayload(getMobileBridgeGatewayUrl(), pairingCode)
   }
 

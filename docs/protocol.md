@@ -231,7 +231,7 @@ Rules:
 - returns `403` from non-loopback clients;
 - does not require the mobile pairing API key;
 - returns the same private diagnostic shape as authenticated `/health/detailed`;
-- includes `pairing.qrPayload` only while the pairing code is available.
+- includes `pairing.qrPayload`; callers must also check `pairing.available` before showing it as an active QR.
 
 Agent probe rules:
 
