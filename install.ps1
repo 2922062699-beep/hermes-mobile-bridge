@@ -6,12 +6,13 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$BridgePayloadRef = "c2a938c0410a000a978022a9e0e5da3937c40df8"
+$BridgePayloadRef = "ceed082af32cda90af2d5f9045de3a995ab8a319"
 $RepoRawBase = "https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/$BridgePayloadRef"
 $InstallRoot = Join-Path $env:LOCALAPPDATA "HermesMobileBridge"
 $InstallRequestId = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $Files = @(
   "package.json",
+  "package-lock.json",
   "hermes-mobile.ps1",
   "bridge/server.mjs",
   "docs/protocol.md",
@@ -53,7 +54,51 @@ function Install-BridgeFiles {
   }
 }
 
+function Test-NodeForInstall {
+  $node = Get-Command node -ErrorAction SilentlyContinue
+  if (-not $node) {
+    throw "Node.js is required before installing Hermes Mobile Bridge dependencies. Install the LTS version from https://nodejs.org/en/download, then run this command again."
+  }
+
+  $npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
+  if (-not $npm) {
+    $npm = Get-Command npm -ErrorAction SilentlyContinue
+  }
+
+  if (-not $npm) {
+    throw "npm was not found. Install Node.js LTS from https://nodejs.org/en/download, then run this command again."
+  }
+
+  return @{
+    NodeVersion = (& node --version)
+    NpmCommand = $npm.Source
+  }
+}
+
+function Install-NodeDependencies {
+  param([string]$NpmCommand)
+
+  $packageLock = Join-Path $InstallRoot "package-lock.json"
+  if (-not (Test-Path $packageLock)) {
+    throw "Cannot install Hermes Mobile Bridge dependencies because package-lock.json is missing from $InstallRoot."
+  }
+
+  Write-Host "Installing Node dependencies with npm ci..."
+  Push-Location $InstallRoot
+  try {
+    $npmOutput = & $NpmCommand ci --omit=dev --no-audit --no-fund 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      $log = ($npmOutput | Out-String).Trim()
+      throw "npm ci failed. Hermes Mobile Bridge will not start until dependencies install successfully.`n$log"
+    }
+  } finally {
+    Pop-Location
+  }
+}
+
 Install-BridgeFiles
+$InstallTools = Test-NodeForInstall
+Install-NodeDependencies $InstallTools.NpmCommand
 
 $Launcher = Join-Path $InstallRoot "hermes-mobile.ps1"
 if (-not (Test-Path $Launcher)) {
