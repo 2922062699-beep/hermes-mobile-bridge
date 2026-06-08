@@ -15,6 +15,7 @@ $Files = @(
   "hermes-mobile.ps1",
   "bridge/server.mjs",
   "docs/protocol.md",
+  "docs/release.md",
   "docs/security.md",
   "docs/troubleshooting.md",
   "README.md"

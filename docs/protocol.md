@@ -1,6 +1,6 @@
 # Hermes Mobile Bridge Protocol
 
-Version: `0.1`
+Version: `0.2`
 
 ## Authentication
 
@@ -94,9 +94,26 @@ Pairing fields:
     "expiresAt": "2026-06-08T10:30:00.000Z",
     "expiresInSeconds": 295,
     "used": false
+  },
+  "agent": {
+    "agentUrl": "http://127.0.0.1:8642",
+    "agentStatus": "ok",
+    "agentDetail": "Hermes Agent is reachable at http://127.0.0.1:8642",
+    "llmStatus": "warning",
+    "llmDetail": "Model list requires Hermes Agent API key. Set HMB_AGENT_API_KEY to enable this probe.",
+    "modelCount": 0
   }
 }
 ```
+
+Agent probe rules:
+
+- default target is `http://127.0.0.1:8642`;
+- set `HMB_AGENT_URL` to override the target;
+- Bridge probes `/health` without modifying Agent config;
+- Bridge probes `/v1/models` only as a read operation;
+- set `HMB_AGENT_API_KEY` if the Agent model endpoint requires auth;
+- if the target is Hermes Mobile Bridge itself, it is ignored as an Agent candidate.
 
 ## Capabilities
 
@@ -110,10 +127,16 @@ Response:
 ```json
 {
   "serverName": "Rick-PC",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "agent": {
+    "agentUrl": "http://127.0.0.1:8642",
+    "agentStatus": "ok",
+    "llmStatus": "warning"
+  },
   "capabilities": {
     "bridge": "ok",
-    "agent": "unavailable"
+    "agent": "ok",
+    "llm": "warning"
   },
   "checks": [
     {

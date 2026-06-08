@@ -83,6 +83,30 @@ The status output includes the phone URL, LAN IP, local health URL, and Windows 
 
 See [docs/troubleshooting.md](docs/troubleshooting.md).
 
+## Hermes Agent Probe
+
+Bridge probes the local Hermes Agent without changing its configuration.
+
+Default probe target:
+
+```text
+http://127.0.0.1:8642
+```
+
+Override it with:
+
+```powershell
+$env:HMB_AGENT_URL = "http://127.0.0.1:8642"
+```
+
+If the Hermes Agent model endpoint requires an API key, set:
+
+```powershell
+$env:HMB_AGENT_API_KEY = "..."
+```
+
+Without `HMB_AGENT_API_KEY`, Bridge can still report whether Hermes Agent `/health` is reachable. It reports LLM/model probing as `warning` when `/v1/models` requires auth.
+
 ## Phase 1 Scope
 
 Implemented:
@@ -93,6 +117,8 @@ Implemented:
 - `GET /v1/mobile/capabilities`
 - `POST /v1/mobile/doctor`
 - `POST /v1/mobile/fix`
+- local Hermes Agent `/health` probe
+- local Hermes Agent `/v1/models` probe when `HMB_AGENT_API_KEY` is available
 
 Not implemented yet:
 
@@ -107,3 +133,5 @@ Not implemented yet:
 The mobile app cannot send arbitrary commands to the PC. Future fix actions must be hardcoded allow-list actions.
 
 See [docs/security.md](docs/security.md).
+
+Release process notes: [docs/release.md](docs/release.md).

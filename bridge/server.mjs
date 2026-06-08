@@ -2,9 +2,10 @@ import http from 'node:http'
 import os from 'node:os'
 import crypto from 'node:crypto'
 
-const VERSION = '0.1.0'
+const VERSION = '0.2.0'
 const PORT = Number.parseInt(process.env.HMB_PORT || '8642', 10)
 const PUBLIC_URL = process.env.HMB_PUBLIC_URL || `http://127.0.0.1:${PORT}`
+const AGENT_URL = (process.env.HMB_AGENT_URL || 'http://127.0.0.1:8642').replace(/\/+$/, '')
 const PAIRING_TTL_MS = Number.parseInt(
   process.env.HMB_PAIRING_TTL_MS || '300000',
   10
@@ -14,6 +15,10 @@ let pairingCode = createPairingCode()
 let pairingCreatedAt = Date.now()
 let pairingUsed = false
 const mobileApiKey = `hm_${crypto.randomBytes(24).toString('hex')}`
+let agentProbeCache = {
+  expiresAt: 0,
+  result: null,
+}
 
 function getLanIp() {
   const interfaces = os.networkInterfaces()
@@ -53,13 +58,133 @@ function isPairingAvailable() {
   return !pairingUsed && !isPairingExpired()
 }
 
-function getCapabilities() {
+function getIdentity(record) {
+  return [
+    typeof record.platform === 'string' ? record.platform : '',
+    typeof record.service === 'string' ? record.service : '',
+    typeof record.name === 'string' ? record.name : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+async function fetchJson(url, timeoutMs = 1000, headers = {}) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(url, {
+      headers,
+      signal: controller.signal,
+    })
+    const text = await response.text()
+    let data = undefined
+    if (text.trim()) {
+      try {
+        data = JSON.parse(text)
+      } catch {
+        data = undefined
+      }
+    }
+
+    return { response, data }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function parseModelList(value) {
+  if (typeof value === 'string') return [value]
+  if (Array.isArray(value)) return value.flatMap(parseModelList)
+  if (!value || typeof value !== 'object') return []
+
+  const ownModel =
+    typeof value.model === 'string' ? value.model :
+    typeof value.id === 'string' ? value.id :
+    typeof value.name === 'string' ? value.name :
+    typeof value.label === 'string' ? value.label :
+    undefined
+  const nested = ['data', 'models', 'available_models', 'availableModels', 'items']
+    .flatMap((key) => parseModelList(value[key]))
+
+  return ownModel ? [ownModel, ...nested] : nested
+}
+
+async function probeHermesAgent() {
+  const now = Date.now()
+  if (agentProbeCache.result && agentProbeCache.expiresAt > now) {
+    return agentProbeCache.result
+  }
+
+  const result = {
+    agentUrl: AGENT_URL,
+    agentStatus: 'unavailable',
+    agentDetail: `Hermes Agent was not reachable at ${AGENT_URL}`,
+    llmStatus: 'unavailable',
+    llmDetail: 'Model list was not checked because Hermes Agent is unavailable',
+    modelCount: 0,
+  }
+
+  try {
+    const health = await fetchJson(`${AGENT_URL}/health`, 1000)
+    const record = health.data && typeof health.data === 'object' ? health.data : {}
+    const status = typeof record.status === 'string' ? record.status.toLowerCase() : ''
+    const identity = getIdentity(record)
+    const isBridge = identity.includes('hermes-mobile-bridge')
+    const isHermes = identity.includes('hermes')
+
+    if (health.response.ok && status === 'ok' && isHermes && !isBridge) {
+      result.agentStatus = 'ok'
+      result.agentDetail = `Hermes Agent is reachable at ${AGENT_URL}`
+    } else if (health.response.ok && isBridge) {
+      result.agentDetail = `Skipped ${AGENT_URL} because it is Hermes Mobile Bridge, not Hermes Agent`
+    } else {
+      result.agentStatus = health.response.ok ? 'warning' : 'unavailable'
+      result.agentDetail = `Agent health returned HTTP ${health.response.status}`
+    }
+  } catch {
+    result.agentDetail = `Hermes Agent was not reachable at ${AGENT_URL}`
+  }
+
+  if (result.agentStatus === 'ok') {
+    try {
+      const headers = process.env.HMB_AGENT_API_KEY
+        ? { Authorization: `Bearer ${process.env.HMB_AGENT_API_KEY}` }
+        : {}
+      const models = await fetchJson(`${AGENT_URL}/v1/models`, 1200, headers)
+      const modelList = parseModelList(models.data)
+      if (models.response.ok && modelList.length > 0) {
+        result.llmStatus = 'ok'
+        result.llmDetail = `${modelList.length} model(s) found`
+        result.modelCount = modelList.length
+      } else if (models.response.status === 401 || models.response.status === 403) {
+        result.llmStatus = 'warning'
+        result.llmDetail = 'Model list requires Hermes Agent API key. Set HMB_AGENT_API_KEY to enable this probe.'
+      } else {
+        result.llmStatus = 'warning'
+        result.llmDetail = `Model list returned HTTP ${models.response.status}`
+      }
+    } catch {
+      result.llmStatus = 'warning'
+      result.llmDetail = 'Model list probe timed out or failed'
+    }
+  }
+
+  agentProbeCache = {
+    expiresAt: now + 5000,
+    result,
+  }
+  return result
+}
+
+async function getCapabilities() {
+  const probe = await probeHermesAgent()
   return {
     bridge: 'ok',
-    agent: 'unavailable',
+    agent: probe.agentStatus,
     runs: 'unavailable',
     sse: 'unavailable',
-    llm: 'unavailable',
+    llm: probe.llmStatus,
     memory: 'unavailable',
     usage: 'unavailable',
     approval: 'unavailable',
@@ -68,7 +193,8 @@ function getCapabilities() {
   }
 }
 
-function getChecks() {
+async function getChecks() {
+  const probe = await probeHermesAgent()
   return [
     {
       key: 'bridge',
@@ -79,8 +205,14 @@ function getChecks() {
     {
       key: 'agent',
       label: 'Hermes Agent',
-      status: 'unavailable',
-      detail: 'Phase 1 has not connected to Hermes Agent yet',
+      status: probe.agentStatus,
+      detail: probe.agentDetail,
+    },
+    {
+      key: 'llm',
+      label: 'LLM',
+      status: probe.llmStatus,
+      detail: probe.llmDetail,
     },
   ]
 }
@@ -122,7 +254,7 @@ function isAuthorized(request) {
   return header === `Bearer ${mobileApiKey}`
 }
 
-function getDetailedStatus() {
+async function getDetailedStatus() {
   return {
     status: 'ok',
     version: VERSION,
@@ -145,8 +277,9 @@ function getDetailedStatus() {
       expiresInSeconds: getPairingExpiresInSeconds(),
       used: pairingUsed,
     },
-    capabilities: getCapabilities(),
-    checks: getChecks(),
+    agent: await probeHermesAgent(),
+    capabilities: await getCapabilities(),
+    checks: await getChecks(),
   }
 }
 
@@ -238,7 +371,7 @@ async function handleFix(request, response) {
     return
   }
 
-  const detailedStatus = getDetailedStatus()
+  const detailedStatus = await getDetailedStatus()
   writeJson(response, 200, {
     ...detailedStatus,
     status: 'completed',
@@ -272,7 +405,7 @@ async function handlePair(request, response) {
     apiKey: mobileApiKey,
     serverName,
     gatewayUrl: PUBLIC_URL,
-    capabilities: getCapabilities(),
+    capabilities: await getCapabilities(),
   })
 }
 
@@ -291,7 +424,7 @@ async function route(request, response) {
   }
 
   if (request.method === 'GET' && url.pathname === '/health/detailed') {
-    writeJson(response, 200, getDetailedStatus())
+    writeJson(response, 200, await getDetailedStatus())
     return
   }
 
@@ -310,14 +443,15 @@ async function route(request, response) {
       serverName,
       version: VERSION,
       gatewayUrl: PUBLIC_URL,
-      capabilities: getCapabilities(),
-      checks: getChecks(),
+      agent: await probeHermesAgent(),
+      capabilities: await getCapabilities(),
+      checks: await getChecks(),
     })
     return
   }
 
   if (request.method === 'POST' && url.pathname === '/v1/mobile/doctor') {
-    writeJson(response, 200, getDetailedStatus())
+    writeJson(response, 200, await getDetailedStatus())
     return
   }
 
