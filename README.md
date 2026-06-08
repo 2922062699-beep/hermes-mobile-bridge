@@ -15,13 +15,49 @@ It does not require Hermes Agent official changes for Phase 1.
 
 ## Quick Start
 
+### Windows
+
 Run this in Windows PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/main/install.ps1 | iex
 ```
 
-Or, from this repository:
+Default install directory:
+
+```text
+%LOCALAPPDATA%\HermesMobileBridge
+```
+
+### macOS
+
+Run this in Terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/main/install.sh | bash
+```
+
+Default install directory:
+
+```text
+$HOME/.hermes-mobile-bridge
+```
+
+### Linux or WSL
+
+Run this in a bash-compatible terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/main/install.sh | bash
+```
+
+Default install directory:
+
+```text
+$HOME/.hermes-mobile-bridge
+```
+
+Or, from this repository on Windows:
 
 ```powershell
 .\hermes-mobile.ps1 start
