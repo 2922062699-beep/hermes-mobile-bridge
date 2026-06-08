@@ -20,6 +20,8 @@ The Bridge runs in the foreground. Closing the terminal stops the service.
 
 Pairing codes expire after 5 minutes by default and are invalidated immediately after successful pairing.
 
+Before pairing, `/health/detailed` only exposes public service identity and pairing metadata. Network details, Agent probe results, capabilities, doctor, fix actions, and passthrough endpoints require the paired mobile API key.
+
 ## Future Fix Actions
 
 Allowed examples:

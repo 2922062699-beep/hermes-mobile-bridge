@@ -77,7 +77,29 @@ HTTP status: `410 Gone`.
 GET /health/detailed
 ```
 
-Pairing fields:
+Before pairing, this endpoint returns only public service and pairing fields:
+
+```json
+{
+  "status": "ok",
+  "service": "hermes-mobile-bridge",
+  "pairing": {
+    "available": true,
+    "codeLength": 6,
+    "expiresAt": "2026-06-08T10:30:00.000Z",
+    "expiresInSeconds": 295,
+    "used": false
+  }
+}
+```
+
+After pairing, send:
+
+```http
+Authorization: Bearer hm_xxxxx
+```
+
+The authenticated response includes private diagnostics:
 
 ```json
 {

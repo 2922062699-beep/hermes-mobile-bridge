@@ -335,6 +335,25 @@ async function getDetailedStatus() {
   }
 }
 
+function getPublicDetailedStatus() {
+  return {
+    status: 'ok',
+    version: VERSION,
+    service: 'hermes-mobile-bridge',
+    name: 'Hermes Mobile Bridge',
+    platform: 'windows',
+    serverName,
+    gatewayUrl: PUBLIC_URL,
+    pairing: {
+      available: isPairingAvailable(),
+      codeLength: 6,
+      expiresAt: getPairingExpiresAt(),
+      expiresInSeconds: getPairingExpiresInSeconds(),
+      used: pairingUsed,
+    },
+  }
+}
+
 function getAllowedFixAction(key) {
   const actions = {
     bridge: {
@@ -476,7 +495,11 @@ async function route(request, response) {
   }
 
   if (request.method === 'GET' && url.pathname === '/health/detailed') {
-    writeJson(response, 200, await getDetailedStatus())
+    writeJson(
+      response,
+      200,
+      isAuthorized(request) ? await getDetailedStatus() : getPublicDetailedStatus()
+    )
     return
   }
 
