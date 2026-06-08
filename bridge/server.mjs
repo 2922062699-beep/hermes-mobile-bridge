@@ -16,6 +16,16 @@ const PAIRING_TTL_MS = Number.parseInt(
   process.env.HMB_PAIRING_TTL_MS || '300000',
   10
 )
+
+function detectPlatform() {
+  if (process.platform === 'win32') return 'windows'
+  if (process.platform === 'darwin') return 'macos'
+  if (process.platform === 'linux') return 'linux'
+  return process.platform
+}
+
+const PLATFORM = detectPlatform()
+
 let qrcode = null
 try {
   qrcode = (await import('qrcode-terminal')).default
@@ -576,7 +586,7 @@ async function getDetailedStatus() {
     version: VERSION,
     service: 'hermes-mobile-bridge',
     name: 'Hermes Mobile Bridge',
-    platform: 'windows',
+    platform: PLATFORM,
     serverName,
     gatewayUrl: PUBLIC_URL,
     network: {
@@ -599,7 +609,7 @@ function getPublicDetailedStatus() {
     version: VERSION,
     service: 'hermes-mobile-bridge',
     name: 'Hermes Mobile Bridge',
-    platform: 'windows',
+    platform: PLATFORM,
     serverName,
     gatewayUrl: PUBLIC_URL,
     pairing: getPairingStatus(),
@@ -759,7 +769,7 @@ async function route(request, response) {
       version: VERSION,
       service: 'hermes-mobile-bridge',
       name: 'Hermes Mobile Bridge',
-      platform: 'windows',
+      platform: PLATFORM,
     })
     return
   }
