@@ -130,6 +130,22 @@ function printPairingQr(bridgeUrl, code) {
   }
 }
 
+function getPairingStatus({ includeQrPayload = false } = {}) {
+  const pairing = {
+    available: isPairingAvailable(),
+    codeLength: 6,
+    expiresAt: getPairingExpiresAt(),
+    expiresInSeconds: getPairingExpiresInSeconds(),
+    used: pairingUsed,
+  }
+
+  if (includeQrPayload && pairing.available) {
+    pairing.qrPayload = createPairingQrPayload(getMobileBridgeGatewayUrl(), pairingCode)
+  }
+
+  return pairing
+}
+
 function getIdentity(record) {
   return [
     typeof record.platform === 'string' ? record.platform : '',
@@ -563,13 +579,7 @@ async function getDetailedStatus() {
       phoneUrl: PUBLIC_URL,
       port: PORT,
     },
-    pairing: {
-      available: isPairingAvailable(),
-      codeLength: 6,
-      expiresAt: getPairingExpiresAt(),
-      expiresInSeconds: getPairingExpiresInSeconds(),
-      used: pairingUsed,
-    },
+    pairing: getPairingStatus({ includeQrPayload: true }),
     agent: await probeHermesAgent(),
     capabilities: await getCapabilities(),
     checks: await getChecks(),
@@ -585,13 +595,7 @@ function getPublicDetailedStatus() {
     platform: 'windows',
     serverName,
     gatewayUrl: PUBLIC_URL,
-    pairing: {
-      available: isPairingAvailable(),
-      codeLength: 6,
-      expiresAt: getPairingExpiresAt(),
-      expiresInSeconds: getPairingExpiresInSeconds(),
-      used: pairingUsed,
-    },
+    pairing: getPairingStatus(),
   }
 }
 
