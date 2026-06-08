@@ -2,7 +2,7 @@ import http from 'node:http'
 import os from 'node:os'
 import crypto from 'node:crypto'
 
-const VERSION = '0.2.4'
+const VERSION = '0.3.0'
 const PORT = Number.parseInt(process.env.HMB_PORT || '8642', 10)
 const PUBLIC_URL = process.env.HMB_PUBLIC_URL || `http://127.0.0.1:${PORT}`
 const AGENT_URL = (process.env.HMB_AGENT_URL || 'http://127.0.0.1:8642').replace(/\/+$/, '')
