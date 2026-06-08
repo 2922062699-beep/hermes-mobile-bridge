@@ -120,7 +120,7 @@ if ($Command -eq "start") {
 }
 
 if ($Command -eq "doctor" -or $Command -eq "status") {
-  $url = "http://127.0.0.1:$Port/health/detailed"
+  $url = "http://127.0.0.1:$Port/v1/local/status"
   try {
     $result = Invoke-RestMethod -Method GET -Uri $url -TimeoutSec 5
     Write-Host "Hermes Mobile Bridge status"

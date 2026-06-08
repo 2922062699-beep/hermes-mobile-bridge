@@ -128,6 +128,21 @@ The authenticated response includes private diagnostics:
 }
 ```
 
+## Local PC Status
+
+```http
+GET /v1/local/status
+```
+
+This endpoint is for `hermes-mobile.ps1 status` and `hermes-mobile.ps1 doctor`.
+
+Rules:
+
+- only available from loopback addresses on the PC;
+- returns `403` from non-loopback clients;
+- does not require the mobile pairing API key;
+- returns the same private diagnostic shape as authenticated `/health/detailed`.
+
 Agent probe rules:
 
 - default target is `http://127.0.0.1:8642`;

@@ -391,6 +391,15 @@ function isAuthorized(request) {
   return header === `Bearer ${mobileApiKey}`
 }
 
+function isLoopbackRequest(request) {
+  const address = request.socket.remoteAddress || ''
+  return (
+    address === '127.0.0.1' ||
+    address === '::1' ||
+    address === '::ffff:127.0.0.1'
+  )
+}
+
 async function getDetailedStatus() {
   return {
     status: 'ok',
@@ -586,6 +595,16 @@ async function route(request, response) {
       200,
       isAuthorized(request) ? await getDetailedStatus() : getPublicDetailedStatus()
     )
+    return
+  }
+
+  if (request.method === 'GET' && url.pathname === '/v1/local/status') {
+    if (!isLoopbackRequest(request)) {
+      writeJson(response, 403, { error: 'Local status is only available from this PC' })
+      return
+    }
+
+    writeJson(response, 200, await getDetailedStatus())
     return
   }
 

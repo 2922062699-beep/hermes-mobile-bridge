@@ -22,6 +22,8 @@ Pairing codes expire after 5 minutes by default and are invalidated immediately 
 
 Before pairing, `/health/detailed` only exposes public service identity and pairing metadata. Network details, Agent probe results, capabilities, doctor, fix actions, and passthrough endpoints require the paired mobile API key.
 
+`/v1/local/status` exposes private diagnostics without a mobile API key, but only for loopback requests from the same PC. It is intended for `hermes-mobile.ps1 status` and `hermes-mobile.ps1 doctor`.
+
 ## Future Fix Actions
 
 Allowed examples:
