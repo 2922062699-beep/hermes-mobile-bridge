@@ -125,6 +125,8 @@ When `HMB_AGENT_API_KEY` is set, Bridge includes it as `agentApiKey` in the pair
 
 If Hermes Agent requires auth for `/v1/models` and `HMB_AGENT_API_KEY` is missing, Bridge rejects pairing before the pairing code is consumed. Set `HMB_AGENT_API_KEY`, restart Bridge, then pair again.
 
+When launched from an interactive PowerShell window, `hermes-mobile.ps1 start` probes `{HMB_AGENT_URL}/v1/models` before starting Bridge. If the endpoint requires auth and `HMB_AGENT_API_KEY` is missing, the launcher asks for the Agent API key and sets it for the current Bridge process. The key is not printed.
+
 Bridge also probes Memory as a read-only status check. Default paths:
 
 ```text

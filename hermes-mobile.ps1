@@ -98,6 +98,108 @@ function Write-NetworkHelp {
   Write-Host "  3. Allow Node.js through Windows Firewall for private networks."
 }
 
+function Get-AgentUrl {
+  $agentUrl = $env:HMB_AGENT_URL
+  if (-not $agentUrl) {
+    $agentUrl = "http://127.0.0.1:8642"
+  }
+
+  return $agentUrl.TrimEnd("/")
+}
+
+function Get-HttpStatusCodeFromError {
+  param($ErrorRecord)
+
+  $response = $ErrorRecord.Exception.Response
+  if ($response -and $response.StatusCode -ne $null) {
+    return [int]$response.StatusCode
+  }
+
+  return $null
+}
+
+function Test-CanPrompt {
+  if (-not [Environment]::UserInteractive) {
+    return $false
+  }
+
+  if ($Host.Name -ne "ConsoleHost") {
+    return $false
+  }
+
+  try {
+    return -not [Console]::IsInputRedirected
+  } catch {
+    return $false
+  }
+}
+
+function Convert-SecureStringToPlainText {
+  param([Security.SecureString]$SecureValue)
+
+  $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureValue)
+  try {
+    return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+  } finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+  }
+}
+
+function Test-AgentModelsEndpoint {
+  $agentUrl = Get-AgentUrl
+  $headers = @{}
+  if ($env:HMB_AGENT_API_KEY) {
+    $headers.Authorization = "Bearer $($env:HMB_AGENT_API_KEY)"
+  }
+
+  try {
+    Invoke-WebRequest -UseBasicParsing -Method GET -Uri "$agentUrl/v1/models" -Headers $headers -TimeoutSec 4 | Out-Null
+    return "ok"
+  } catch {
+    $statusCode = Get-HttpStatusCodeFromError $_
+    if ($statusCode -eq 401 -or $statusCode -eq 403) {
+      return "auth-required"
+    }
+
+    return "unknown"
+  }
+}
+
+function Ensure-AgentApiKeyForPairing {
+  if ($env:HMB_AGENT_API_KEY) {
+    return
+  }
+
+  $probe = Test-AgentModelsEndpoint
+  if ($probe -ne "auth-required") {
+    return
+  }
+
+  Write-Host ""
+  Write-Host "Hermes Agent model endpoint requires an API key."
+  Write-Host "Bridge needs HMB_AGENT_API_KEY so Hermes Mobile can chat directly with Hermes Agent after pairing."
+
+  if (-not (Test-CanPrompt)) {
+    Write-Host "This terminal is not interactive. Set HMB_AGENT_API_KEY before starting Bridge, then retry pairing."
+    return
+  }
+
+  $secureKey = Read-Host "Enter Hermes Agent API Key for this Bridge session, or press Enter to skip" -AsSecureString
+  if (-not $secureKey -or $secureKey.Length -eq 0) {
+    Write-Host "Skipped HMB_AGENT_API_KEY. Pairing will fail if Hermes Agent requires auth."
+    return
+  }
+
+  $plainKey = Convert-SecureStringToPlainText $secureKey
+  if (-not $plainKey.Trim()) {
+    Write-Host "Skipped HMB_AGENT_API_KEY. Pairing will fail if Hermes Agent requires auth."
+    return
+  }
+
+  $env:HMB_AGENT_API_KEY = $plainKey.Trim()
+  Write-Host "HMB_AGENT_API_KEY is set for this Bridge process."
+}
+
 function Write-BridgeCapabilities {
   param($Capabilities)
 
@@ -219,6 +321,7 @@ if ($Command -eq "start") {
   Write-Host "Install dir: $ScriptDir"
   Write-Host "Gateway URL: $GatewayUrl"
   Write-NetworkHelp $GatewayUrl $SelectedPort
+  Ensure-AgentApiKeyForPairing
 
   $env:HMB_PORT = "$SelectedPort"
   $env:HMB_PUBLIC_URL = $GatewayUrl

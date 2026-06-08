@@ -1,6 +1,6 @@
 # Hermes Mobile Bridge Protocol
 
-Version: `0.2.3`
+Version: `0.2.4`
 
 ## Product Boundary
 
@@ -315,7 +315,7 @@ Response:
 ```json
 {
   "serverName": "Rick-PC",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "agent": {
     "agentUrl": "http://127.0.0.1:8642",
     "agentStatus": "ok",

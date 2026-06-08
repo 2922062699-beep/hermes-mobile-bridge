@@ -114,6 +114,21 @@ If Hermes Mobile was paired with an old Bridge process, restart Bridge and pair 
 
 The mobile API key is generated per Bridge process in Phase 1.
 
+## Pairing Requires HMB_AGENT_API_KEY
+
+If Hermes Agent requires auth for `/v1/models`, Bridge needs `HMB_AGENT_API_KEY` before pairing. Otherwise Hermes Mobile could pair successfully but fail later when it tries to chat directly with Hermes Agent.
+
+In an interactive PowerShell window, the launcher asks for the Agent API key automatically before starting Bridge.
+
+You can also set it manually:
+
+```powershell
+$env:HMB_AGENT_API_KEY = "<Agent API Key>"
+.\hermes-mobile.ps1 start
+```
+
+If you started Bridge through the remote install command, stop it, set `HMB_AGENT_API_KEY`, then run the install/start command again.
+
 ## Capabilities Are Unavailable
 
 Phase 1 proves that Hermes Mobile can reach the Bridge and that the Bridge can diagnose selected PC-side modules.
