@@ -26,6 +26,18 @@ function detectPlatform() {
 
 const PLATFORM = detectPlatform()
 
+function buildAgentKeySetupHint(platform) {
+  if (platform === 'windows') {
+    return 'Set HMB_AGENT_API_KEY in the same PowerShell window, restart Bridge, then pair again.'
+  }
+
+  if (platform === 'macos' || platform === 'linux') {
+    return "Run 'export HMB_AGENT_API_KEY=<your-key>' in the same terminal, restart Bridge, then pair again."
+  }
+
+  return 'Set HMB_AGENT_API_KEY in the same terminal, restart Bridge, then pair again.'
+}
+
 let qrcode = null
 try {
   qrcode = (await import('qrcode-terminal')).default
@@ -400,7 +412,7 @@ async function handleModels(response) {
 
   if (models.response.status === 401 || models.response.status === 403) {
     writeJson(response, 502, {
-      error: 'Hermes Agent model list requires HMB_AGENT_API_KEY on the PC Bridge',
+      error: 'Hermes Agent model list requires HMB_AGENT_API_KEY on Hermes Mobile Bridge',
       agentUrl: AGENT_URL,
     })
     return
@@ -449,7 +461,7 @@ async function handleUsageSummary(response) {
 
   if (usage.response.status === 401 || usage.response.status === 403) {
     writeJson(response, 502, {
-      error: 'Hermes Agent token usage requires HMB_AGENT_API_KEY on the PC Bridge',
+      error: 'Hermes Agent token usage requires HMB_AGENT_API_KEY on Hermes Mobile Bridge',
       agentUrl: AGENT_URL,
     })
     return
@@ -739,7 +751,7 @@ async function handlePair(request, response) {
     writeJson(response, 424, {
       error: 'Hermes Agent requires HMB_AGENT_API_KEY before Bridge pairing',
       detail: probe.llmDetail,
-      setup: 'Set HMB_AGENT_API_KEY in the same PowerShell window, restart Bridge, then pair again.',
+      setup: buildAgentKeySetupHint(PLATFORM),
       agentGatewayUrl: getMobileAgentGatewayUrl(),
     })
     return
