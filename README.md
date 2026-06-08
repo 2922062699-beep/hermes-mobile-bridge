@@ -107,6 +107,18 @@ $env:HMB_AGENT_API_KEY = "..."
 
 Without `HMB_AGENT_API_KEY`, Bridge can still report whether Hermes Agent `/health` is reachable. It reports LLM/model probing as `warning` when `/v1/models` requires auth.
 
+## Product Boundary
+
+Bridge is not the default chat gateway.
+
+Default chat traffic stays on the existing direct path:
+
+```text
+Hermes Mobile -> Hermes Agent Gateway
+```
+
+Bridge is for setup, pairing, diagnostics, troubleshooting, and limited read-only helper passthrough. It should not take over runs, SSE, stop, or approval unless a future product decision explicitly changes this boundary.
+
 After mobile pairing, Bridge also exposes:
 
 ```text
@@ -134,9 +146,10 @@ Implemented:
 
 Not implemented yet:
 
-- `/v1/runs` passthrough;
-- SSE passthrough;
-- approval passthrough;
+- `/v1/runs` passthrough, intentionally out of scope for now;
+- SSE passthrough, intentionally out of scope for now;
+- stop passthrough, intentionally out of scope for now;
+- approval passthrough, intentionally out of scope for now;
 - token usage aggregation fallback;
 - active Hermes Agent adaptation and automated fix actions.
 

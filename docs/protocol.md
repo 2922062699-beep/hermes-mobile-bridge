@@ -2,6 +2,25 @@
 
 Version: `0.2`
 
+## Product Boundary
+
+Bridge is a PC setup and diagnostics assistant, not the default chat gateway.
+
+Default chat traffic remains:
+
+```text
+Hermes Mobile -> Hermes Agent Gateway
+```
+
+Bridge does not currently implement or plan to implement these chat gateway endpoints:
+
+- `POST /v1/runs`
+- `GET /v1/runs/{id}/events`
+- `POST /v1/runs/{id}/stop`
+- `POST /v1/runs/{id}/approval`
+
+Bridge endpoints in this document are for pairing, diagnostics, troubleshooting, and limited read-only helper passthrough.
+
 ## Authentication
 
 Before pairing, only these endpoints are public:
