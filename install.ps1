@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$BridgePayloadRef = "7e2525cbc8f62ab7dcdb4cfdb06288ec23b29d71"
+$BridgePayloadRef = "25d4a7c8db164361da1186a88b807a525ca7c137"
 $RepoRawBase = "https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/$BridgePayloadRef"
 $InstallRoot = Join-Path $env:LOCALAPPDATA "HermesMobileBridge"
 $InstallRequestId = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
