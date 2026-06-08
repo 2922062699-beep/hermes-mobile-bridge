@@ -109,33 +109,57 @@ Bridge is not used as the chat gateway. Hermes Mobile should continue sending ch
 
 ## Commands
 
-After remote install, the files are stored in:
+After remote install, the files are stored in one of these folders:
 
 ```text
-%LOCALAPPDATA%\HermesMobileBridge
+Windows:     %LOCALAPPDATA%\HermesMobileBridge
+macOS/Linux: $HOME/.hermes-mobile-bridge
 ```
 
 Run local commands from that folder:
 
+Windows PowerShell:
+
 ```powershell
 .\hermes-mobile.ps1 start
+.\hermes-mobile.ps1 stop
 .\hermes-mobile.ps1 doctor
 .\hermes-mobile.ps1 status
 .\hermes-mobile.ps1 qr
 ```
 
+macOS/Linux/WSL:
+
+```bash
+./hermes-mobile.sh start
+./hermes-mobile.sh stop
+./hermes-mobile.sh doctor
+./hermes-mobile.sh status
+./hermes-mobile.sh qr
+```
+
 `start` runs the Bridge in the foreground. Keep the terminal open.
+
+`stop` stops a Bridge process that was started by the launcher.
 
 If port `8642` is busy, the launcher tries the next available port up to `8662` and prints the final Gateway URL.
 
 Pairing codes expire after 5 minutes and are invalidated after successful pairing. Restart the Bridge to generate a new code.
 
-Use `.\hermes-mobile.ps1 qr` to reprint the current QR without restarting Bridge. If the pairing code has expired or has already been used, the command tells you to restart Bridge.
+Use `.\hermes-mobile.ps1 qr` or `./hermes-mobile.sh qr` to reprint the current QR without restarting Bridge. If the pairing code has expired or has already been used, the command tells you to restart Bridge.
 
 If the phone cannot connect, run:
 
+Windows PowerShell:
+
 ```powershell
 .\hermes-mobile.ps1 status
+```
+
+macOS/Linux/WSL:
+
+```bash
+./hermes-mobile.sh status
 ```
 
 The status output includes:
