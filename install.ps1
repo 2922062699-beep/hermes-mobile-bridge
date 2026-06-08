@@ -1,13 +1,51 @@
 param(
-  [string]$Command = "start"
+  [ValidateSet("start", "doctor", "status")]
+  [string]$Command = "start",
+  [int]$Port = 8642
 )
 
 $ErrorActionPreference = "Stop"
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Launcher = Join-Path $ScriptDir "hermes-mobile.ps1"
 
-if (-not (Test-Path $Launcher)) {
-  throw "Cannot find hermes-mobile.ps1 next to install.ps1"
+$RepoRawBase = "https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/main"
+$InstallRoot = Join-Path $env:LOCALAPPDATA "HermesMobileBridge"
+$Files = @(
+  "package.json",
+  "hermes-mobile.ps1",
+  "bridge/server.mjs",
+  "docs/protocol.md",
+  "docs/security.md",
+  "README.md"
+)
+
+function Save-BridgeFile {
+  param([string]$RelativePath)
+
+  $target = Join-Path $InstallRoot $RelativePath
+  $targetDir = Split-Path -Parent $target
+  if (-not (Test-Path $targetDir)) {
+    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+  }
+
+  $url = "$RepoRawBase/$($RelativePath -replace '\\','/')"
+  Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $target
 }
 
-& $Launcher $Command
+function Install-BridgeFiles {
+  if (-not (Test-Path $InstallRoot)) {
+    New-Item -ItemType Directory -Path $InstallRoot -Force | Out-Null
+  }
+
+  foreach ($file in $Files) {
+    Save-BridgeFile $file
+  }
+}
+
+Install-BridgeFiles
+
+$Launcher = Join-Path $InstallRoot "hermes-mobile.ps1"
+if (-not (Test-Path $Launcher)) {
+  throw "Cannot find installed launcher: $Launcher"
+}
+
+Write-Host "Hermes Mobile Bridge installed at $InstallRoot"
+& $Launcher $Command -Port $Port

@@ -14,7 +14,13 @@ It does not require Hermes Agent official changes for Phase 1.
 
 ## Quick Start
 
-From this repository:
+Run this in Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/main/install.ps1 | iex
+```
+
+Or, from this repository:
 
 ```powershell
 .\hermes-mobile.ps1 start
@@ -41,6 +47,14 @@ POST /v1/mobile/pair
 ```
 
 ## Commands
+
+After remote install, the files are stored in:
+
+```text
+%LOCALAPPDATA%\HermesMobileBridge
+```
+
+Run local commands from that folder:
 
 ```powershell
 .\hermes-mobile.ps1 start
