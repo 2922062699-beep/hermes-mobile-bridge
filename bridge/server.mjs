@@ -439,7 +439,8 @@ function getPublicDetailedStatus() {
   }
 }
 
-function getAllowedFixAction(key) {
+async function getAllowedFixAction(key) {
+  const probe = await probeHermesAgent()
   const actions = {
     bridge: {
       key: 'bridge',
@@ -448,8 +449,8 @@ function getAllowedFixAction(key) {
     },
     agent: {
       key: 'agent',
-      status: 'unavailable',
-      detail: 'Hermes Agent integration is not available in Bridge Phase 1.',
+      status: probe.agentStatus,
+      detail: probe.agentDetail,
     },
     runs: {
       key: 'runs',
@@ -463,8 +464,8 @@ function getAllowedFixAction(key) {
     },
     llm: {
       key: 'llm',
-      status: 'unavailable',
-      detail: 'LLM diagnostics require Hermes Agent integration in a later phase.',
+      status: probe.llmStatus,
+      detail: probe.llmDetail,
     },
     memory: {
       key: 'memory',
@@ -473,8 +474,8 @@ function getAllowedFixAction(key) {
     },
     usage: {
       key: 'usage',
-      status: 'unavailable',
-      detail: 'Token usage diagnostics require Hermes Agent integration in a later phase.',
+      status: probe.usageStatus,
+      detail: probe.usageDetail,
     },
     approval: {
       key: 'approval',
@@ -505,7 +506,7 @@ async function handleFix(request, response) {
   const payload = await readJson(request)
   const requestedAction =
     typeof payload.action === 'string' ? payload.action.trim() : 'doctor'
-  const action = getAllowedFixAction(requestedAction)
+  const action = await getAllowedFixAction(requestedAction)
 
   if (!action) {
     writeJson(response, 400, {

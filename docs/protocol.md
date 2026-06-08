@@ -255,11 +255,13 @@ Request:
 
 ```json
 {
-  "action": "memory"
+  "action": "usage"
 }
 ```
 
 Phase 1 only accepts hardcoded allow-list actions and does not execute arbitrary PC commands.
+
+For `agent`, `llm`, and `usage`, the response reflects the latest Bridge probe result.
 
 Allowed actions:
 
@@ -283,9 +285,9 @@ Response:
   "healthStatus": "ok",
   "actions": [
     {
-      "key": "memory",
-      "status": "unavailable",
-      "detail": "Memory diagnostics require Hermes Agent integration in a later phase."
+      "key": "usage",
+      "status": "warning",
+      "detail": "Token usage endpoint requires Hermes Agent API key. Set HMB_AGENT_API_KEY to enable this probe."
     }
   ],
   "capabilities": {
