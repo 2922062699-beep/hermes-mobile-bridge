@@ -183,14 +183,30 @@ http://127.0.0.1:8642
 
 Override it with:
 
+Windows PowerShell:
+
 ```powershell
 $env:HMB_AGENT_URL = "http://127.0.0.1:8642"
 ```
 
+macOS/Linux bash or zsh:
+
+```bash
+export HMB_AGENT_URL="http://127.0.0.1:8642"
+```
+
 If the Hermes Agent model endpoint requires an API key, set:
+
+Windows PowerShell:
 
 ```powershell
 $env:HMB_AGENT_API_KEY = "..."
+```
+
+macOS/Linux bash or zsh:
+
+```bash
+export HMB_AGENT_API_KEY="..."
 ```
 
 Without `HMB_AGENT_API_KEY`, Bridge can still report whether Hermes Agent `/health` is reachable. It reports LLM/model probing as `warning` when `/v1/models` requires auth.
@@ -199,7 +215,7 @@ When `HMB_AGENT_API_KEY` is set, Bridge includes it as `agentApiKey` in the pair
 
 If Hermes Agent requires auth for `/v1/models` and `HMB_AGENT_API_KEY` is missing, Bridge rejects pairing before the pairing code is consumed. Set `HMB_AGENT_API_KEY`, restart Bridge, then pair again.
 
-When launched from an interactive PowerShell window, `hermes-mobile.ps1 start` probes `{HMB_AGENT_URL}/v1/models` before starting Bridge. If the endpoint requires auth and `HMB_AGENT_API_KEY` is missing, the launcher asks for the Agent API key and sets it for the current Bridge process. The key is not printed.
+When launched from an interactive terminal, `hermes-mobile.ps1 start` or `hermes-mobile.sh start` probes `{HMB_AGENT_URL}/v1/models` before starting Bridge. If the endpoint requires auth and `HMB_AGENT_API_KEY` is missing, the launcher asks for the Agent API key and sets it for the current Bridge process. The key is not printed.
 
 Bridge also probes Memory as a read-only status check. Default paths:
 
@@ -209,17 +225,33 @@ Bridge also probes Memory as a read-only status check. Default paths:
 
 Override them before starting Bridge if your PC Agent exposes a different read-only memory status endpoint:
 
+Windows PowerShell:
+
 ```powershell
 $env:HMB_MEMORY_STATUS_PATHS = "/v1/memory/status,/v1/memory"
 ```
 
+macOS/Linux bash or zsh:
+
+```bash
+export HMB_MEMORY_STATUS_PATHS="/v1/memory/status,/v1/memory"
+```
+
 Use local diagnostics after Bridge is running:
+
+Windows PowerShell:
 
 ```powershell
 .\hermes-mobile.ps1 status
 ```
 
-`status` and `doctor` call the loopback-only `GET /v1/local/status` endpoint. This exposes PC-side details to the terminal without making them public on the LAN.
+macOS/Linux/WSL:
+
+```bash
+./hermes-mobile.sh status
+```
+
+`status`, `doctor`, and `qr` call the loopback-only `GET /v1/local/status` endpoint. This exposes PC-side details to the terminal without making them public on the LAN.
 
 ## Product Boundary
 
