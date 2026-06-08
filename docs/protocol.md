@@ -21,6 +21,22 @@ Bridge does not currently implement or plan to implement these chat gateway endp
 
 Bridge endpoints in this document are for pairing, diagnostics, troubleshooting, and limited read-only helper passthrough.
 
+## QR Pairing Payload
+
+Bridge may print a terminal QR code containing this JSON string:
+
+```json
+{"v":1,"b":"http://192.168.31.191:8642","c":"482913"}
+```
+
+Fields:
+
+- `v`: QR payload protocol version. Current value is `1`.
+- `b`: phone-reachable Bridge Gateway URL.
+- `c`: 6-digit pairing code.
+
+The QR payload does not include Agent Gateway URL, Agent API key, Bridge API key, server name, diagnostics, or long-term credentials. Hermes Mobile must still call the existing `POST /v1/mobile/pair` endpoint with `{ "pairingCode": "482913" }`.
+
 ## Authentication
 
 Before pairing, only these endpoints are public:
@@ -182,7 +198,8 @@ The authenticated response includes private diagnostics:
     "codeLength": 6,
     "expiresAt": "2026-06-08T10:30:00.000Z",
     "expiresInSeconds": 295,
-    "used": false
+    "used": false,
+    "qrPayload": "{\"v\":1,\"b\":\"http://192.168.31.191:8642\",\"c\":\"482913\"}"
   },
   "agent": {
     "agentUrl": "http://127.0.0.1:8642",
@@ -206,13 +223,15 @@ GET /v1/local/status
 ```
 
 This endpoint is for `hermes-mobile.ps1 status` and `hermes-mobile.ps1 doctor`.
+It is also used by `hermes-mobile.ps1 qr` to reprint the current QR without restarting Bridge.
 
 Rules:
 
 - only available from loopback addresses on the PC;
 - returns `403` from non-loopback clients;
 - does not require the mobile pairing API key;
-- returns the same private diagnostic shape as authenticated `/health/detailed`.
+- returns the same private diagnostic shape as authenticated `/health/detailed`;
+- includes `pairing.qrPayload` only while the pairing code is available.
 
 Agent probe rules:
 

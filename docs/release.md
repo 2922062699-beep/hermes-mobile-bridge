@@ -13,12 +13,13 @@ This avoids mixed installs when GitHub raw content temporarily serves a stale `m
 ## Release Steps
 
 1. Change Bridge code and docs.
-2. Run local verification.
-3. Commit the payload changes.
-4. Copy the full payload commit SHA.
-5. Update `$BridgePayloadRef` in `install.ps1` to that full SHA.
-6. Commit and push the install pointer update.
-7. Test the raw install command.
+2. If `package.json` changed, confirm `package-lock.json` is committed and `npm ci --omit=dev --no-audit --no-fund` passes.
+3. Run local verification.
+4. Commit the payload changes.
+5. Copy the full payload commit SHA.
+6. Update `$BridgePayloadRef` in `install.ps1` to that full SHA.
+7. Commit and push the install pointer update.
+8. Test the raw install command.
 
 ## Current Version
 

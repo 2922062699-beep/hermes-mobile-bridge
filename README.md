@@ -6,6 +6,7 @@ Its first job is simple:
 
 - start a local mobile gateway;
 - generate a temporary 6-digit pairing code;
+- print a terminal QR code for same-WiFi pairing;
 - generate a mobile API key;
 - let Hermes Mobile pair with `Gateway URL + Pairing Code`;
 - expose basic capability status to the mobile connection diagnostic page.
@@ -38,9 +39,12 @@ Hermes Mobile Bridge is running.
 Gateway URL: http://192.168.31.191:8642
 Pairing Code: 482913
 Pairing Expires: 300 seconds
+
+Scan with Hermes Mobile:
+<terminal QR code>
 ```
 
-Open HermesMobile and enter:
+Open HermesMobile and scan the QR code. If camera pairing is unavailable, enter the values manually:
 
 - `Gateway URL`
 - `Pairing Code`
@@ -74,6 +78,7 @@ Run local commands from that folder:
 .\hermes-mobile.ps1 start
 .\hermes-mobile.ps1 doctor
 .\hermes-mobile.ps1 status
+.\hermes-mobile.ps1 qr
 ```
 
 `start` runs the Bridge in the foreground. Keep the terminal open.
@@ -81,6 +86,8 @@ Run local commands from that folder:
 If port `8642` is busy, the launcher tries the next available port up to `8662` and prints the final Gateway URL.
 
 Pairing codes expire after 5 minutes and are invalidated after successful pairing. Restart the Bridge to generate a new code.
+
+Use `.\hermes-mobile.ps1 qr` to reprint the current QR without restarting Bridge. If the pairing code has expired or has already been used, the command tells you to restart Bridge.
 
 If the phone cannot connect, run:
 
