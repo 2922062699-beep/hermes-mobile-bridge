@@ -6,5 +6,8 @@
   "scripts": {
     "start": "node bridge/server.mjs",
     "doctor": "node bridge/server.mjs --doctor"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0"
   }
 }
