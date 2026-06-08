@@ -93,6 +93,12 @@ async function fetchJson(url, timeoutMs = 1000, headers = {}) {
   }
 }
 
+function getAgentHeaders() {
+  return process.env.HMB_AGENT_API_KEY
+    ? { Authorization: `Bearer ${process.env.HMB_AGENT_API_KEY}` }
+    : {}
+}
+
 function parseModelList(value) {
   if (typeof value === 'string') return [value]
   if (Array.isArray(value)) return value.flatMap(parseModelList)
@@ -148,10 +154,7 @@ async function probeHermesAgent() {
 
   if (result.agentStatus === 'ok') {
     try {
-      const headers = process.env.HMB_AGENT_API_KEY
-        ? { Authorization: `Bearer ${process.env.HMB_AGENT_API_KEY}` }
-        : {}
-      const models = await fetchJson(`${AGENT_URL}/v1/models`, 1200, headers)
+      const models = await fetchJson(`${AGENT_URL}/v1/models`, 1200, getAgentHeaders())
       const modelList = parseModelList(models.data)
       if (models.response.ok && modelList.length > 0) {
         result.llmStatus = 'ok'
@@ -175,6 +178,55 @@ async function probeHermesAgent() {
     result,
   }
   return result
+}
+
+async function handleModels(response) {
+  const probe = await probeHermesAgent()
+  if (probe.agentStatus !== 'ok') {
+    writeJson(response, 502, {
+      error: 'Hermes Agent is not reachable from Bridge',
+      detail: probe.agentDetail,
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  let models
+  try {
+    models = await fetchJson(`${AGENT_URL}/v1/models`, 3000, getAgentHeaders())
+  } catch {
+    writeJson(response, 502, {
+      error: 'Hermes Agent model list probe failed',
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  if (models.response.status === 401 || models.response.status === 403) {
+    writeJson(response, 502, {
+      error: 'Hermes Agent model list requires HMB_AGENT_API_KEY on the PC Bridge',
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  if (!models.response.ok) {
+    writeJson(response, 502, {
+      error: `Hermes Agent model list returned HTTP ${models.response.status}`,
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  if (models.data === undefined) {
+    writeJson(response, 502, {
+      error: 'Hermes Agent returned a non-JSON model list',
+      agentUrl: AGENT_URL,
+    })
+    return
+  }
+
+  writeJson(response, 200, models.data)
 }
 
 async function getCapabilities() {
@@ -447,6 +499,11 @@ async function route(request, response) {
       capabilities: await getCapabilities(),
       checks: await getChecks(),
     })
+    return
+  }
+
+  if (request.method === 'GET' && url.pathname === '/v1/models') {
+    await handleModels(response)
     return
   }
 

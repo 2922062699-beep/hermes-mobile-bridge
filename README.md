@@ -107,6 +107,14 @@ $env:HMB_AGENT_API_KEY = "..."
 
 Without `HMB_AGENT_API_KEY`, Bridge can still report whether Hermes Agent `/health` is reachable. It reports LLM/model probing as `warning` when `/v1/models` requires auth.
 
+After mobile pairing, Bridge also exposes:
+
+```text
+GET /v1/models
+```
+
+This endpoint forwards to the local Hermes Agent model list. The mobile `hm_` API key is only used to authorize access to Bridge; it is never forwarded to Hermes Agent. If Hermes Agent requires auth, set `HMB_AGENT_API_KEY` on the PC before starting Bridge.
+
 ## Phase 1 Scope
 
 Implemented:
@@ -117,6 +125,7 @@ Implemented:
 - `GET /v1/mobile/capabilities`
 - `POST /v1/mobile/doctor`
 - `POST /v1/mobile/fix`
+- `GET /v1/models` passthrough
 - local Hermes Agent `/health` probe
 - local Hermes Agent `/v1/models` probe when `HMB_AGENT_API_KEY` is available
 

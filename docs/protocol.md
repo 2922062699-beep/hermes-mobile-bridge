@@ -115,6 +115,38 @@ Agent probe rules:
 - set `HMB_AGENT_API_KEY` if the Agent model endpoint requires auth;
 - if the target is Hermes Mobile Bridge itself, it is ignored as an Agent candidate.
 
+## Models Passthrough
+
+```http
+GET /v1/models
+Authorization: Bearer hm_xxxxx
+```
+
+Bridge forwards this read-only request to:
+
+```text
+{HMB_AGENT_URL}/v1/models
+```
+
+Credential boundary:
+
+- the mobile `hm_` API key authorizes access to Bridge only;
+- Bridge never forwards the mobile API key to Hermes Agent;
+- if Hermes Agent needs auth, Bridge uses `HMB_AGENT_API_KEY`;
+- if `HMB_AGENT_API_KEY` is missing and Agent rejects `/v1/models`, Bridge returns `502` with a setup error.
+
+Response:
+
+```json
+{
+  "data": [
+    {
+      "id": "hermes-agent"
+    }
+  ]
+}
+```
+
 ## Capabilities
 
 ```http
