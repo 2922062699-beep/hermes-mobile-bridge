@@ -31,7 +31,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 BRIDGE_PAYLOAD_REF="0da832b01516392c19af566c8144f4c6cab3cec9"
-REPO_RAW_BASE="https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/${BRIDGE_PAYLOAD_REF}"
+JSDELIVR_BASE="https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@${BRIDGE_PAYLOAD_REF}"
+RAW_BASE="https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/${BRIDGE_PAYLOAD_REF}"
+GHPROXY_BASE="https://ghproxy.com/${RAW_BASE}"
 INSTALL_ROOT="${HMB_INSTALL_DIR:-${HOME}/.hermes-mobile-bridge}"
 INSTALL_REQUEST_ID="$(node -e "console.log(Date.now())" 2>/dev/null || date +%s)"
 FILES=(
@@ -65,23 +67,42 @@ save_bridge_file() {
   local relative_path="$1"
   local target="${INSTALL_ROOT}/${relative_path}"
   local target_dir
-  local url
+  local source_names
+  local source_urls
+  local errors=()
+  local index
 
   target_dir="$(dirname "$target")"
   mkdir -p "$target_dir"
 
-  url="${REPO_RAW_BASE}/${relative_path}?v=${INSTALL_REQUEST_ID}"
-  echo "Downloading ${relative_path}"
-  if ! curl -fsSL "$url" -o "$target"; then
-    echo "Failed to download ${relative_path} from ${url}." >&2
-    echo "Check that GitHub raw content is reachable from this computer, then retry." >&2
-    exit 1
-  fi
+  source_names=("jsDelivr" "GitHub raw" "ghproxy")
+  source_urls=(
+    "${JSDELIVR_BASE}/${relative_path}?v=${INSTALL_REQUEST_ID}"
+    "${RAW_BASE}/${relative_path}?v=${INSTALL_REQUEST_ID}"
+    "${GHPROXY_BASE}/${relative_path}?v=${INSTALL_REQUEST_ID}"
+  )
 
-  if [ ! -f "$target" ]; then
-    echo "Download finished but file is missing: ${target}" >&2
-    exit 1
-  fi
+  echo "Downloading ${relative_path}"
+  for index in "${!source_urls[@]}"; do
+    rm -f "$target"
+    if curl -fsSL --max-time 30 "${source_urls[$index]}" -o "$target"; then
+      if [ -f "$target" ]; then
+        echo "  OK: ${source_names[$index]}"
+        return
+      fi
+      errors+=("${source_names[$index]}: download finished but file is missing")
+    else
+      errors+=("${source_names[$index]}: curl failed")
+    fi
+  done
+
+  echo "Failed to download ${relative_path} from all payload mirrors." >&2
+  local error
+  for error in "${errors[@]}"; do
+    echo "  - ${error}" >&2
+  done
+  echo "Try again later, or manually git clone https://github.com/2922062699-beep/hermes-mobile-bridge and run the launcher locally." >&2
+  exit 1
 }
 
 install_bridge_files() {
