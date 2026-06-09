@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$BridgePayloadRef = "0da832b01516392c19af566c8144f4c6cab3cec9"
+$BridgePayloadRef = "3e35ec6cca8cfecf3893cbf2c44f07647b663397"
 $JsdelivrBase = "https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@$BridgePayloadRef"
 $RawBase = "https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/$BridgePayloadRef"
 $GhproxyBase = "https://ghproxy.com/$RawBase"

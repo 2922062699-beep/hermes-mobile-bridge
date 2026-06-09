@@ -30,7 +30,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-BRIDGE_PAYLOAD_REF="0da832b01516392c19af566c8144f4c6cab3cec9"
+BRIDGE_PAYLOAD_REF="3e35ec6cca8cfecf3893cbf2c44f07647b663397"
 JSDELIVR_BASE="https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@${BRIDGE_PAYLOAD_REF}"
 RAW_BASE="https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/${BRIDGE_PAYLOAD_REF}"
 GHPROXY_BASE="https://ghproxy.com/${RAW_BASE}"
