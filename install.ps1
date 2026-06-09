@@ -7,7 +7,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 $BridgePayloadRef = "0da832b01516392c19af566c8144f4c6cab3cec9"
-$RepoRawBase = "https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/$BridgePayloadRef"
+$JsdelivrBase = "https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@$BridgePayloadRef"
+$RawBase = "https://raw.githubusercontent.com/2922062699-beep/hermes-mobile-bridge/$BridgePayloadRef"
+$GhproxyBase = "https://ghproxy.com/$RawBase"
 $InstallRoot = Join-Path $env:LOCALAPPDATA "HermesMobileBridge"
 $InstallRequestId = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $Files = @(
@@ -27,21 +29,38 @@ function Save-BridgeFile {
 
   $target = Join-Path $InstallRoot $RelativePath
   $targetDir = Split-Path -Parent $target
+  $downloadPath = $RelativePath -replace '\\','/'
   if (-not (Test-Path $targetDir)) {
     New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
   }
 
-  $url = "$RepoRawBase/$($RelativePath -replace '\\','/')?v=$InstallRequestId"
   Write-Host "Downloading $RelativePath"
-  try {
-    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $target
-  } catch {
-    throw "Failed to download $RelativePath from $url. Check that GitHub raw content is reachable from this PC, then retry."
+  $sources = @(
+    @{ Name = "jsDelivr"; Url = "$JsdelivrBase/$downloadPath?v=$InstallRequestId" },
+    @{ Name = "GitHub raw"; Url = "$RawBase/$downloadPath?v=$InstallRequestId" },
+    @{ Name = "ghproxy"; Url = "$GhproxyBase/$downloadPath?v=$InstallRequestId" }
+  )
+  $errors = @()
+
+  foreach ($source in $sources) {
+    if (Test-Path $target) {
+      Remove-Item -LiteralPath $target -Force
+    }
+
+    try {
+      Invoke-WebRequest -UseBasicParsing -Uri $source.Url -OutFile $target -TimeoutSec 30
+      if (Test-Path $target) {
+        Write-Host "  OK: $($source.Name)"
+        return
+      }
+      $errors += "$($source.Name): download finished but file is missing"
+    } catch {
+      $errors += "$($source.Name): $($_.Exception.Message)"
+    }
   }
 
-  if (-not (Test-Path $target)) {
-    throw "Download finished but file is missing: $target"
-  }
+  $detail = ($errors | ForEach-Object { "  - $_" }) -join "`n"
+  throw "Failed to download $RelativePath from all payload mirrors.`n$detail`nTry again later, or manually git clone https://github.com/2922062699-beep/hermes-mobile-bridge and run the launcher locally."
 }
 
 function Install-BridgeFiles {
