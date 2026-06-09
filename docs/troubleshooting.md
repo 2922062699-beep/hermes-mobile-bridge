@@ -24,6 +24,36 @@ If it fails while downloading files:
 - retry from a normal PowerShell window on Windows, or a normal Terminal window on macOS/Linux;
 - check whether a company proxy or security tool blocks `raw.githubusercontent.com`.
 
+The installer now tries three payload mirrors for each downloaded file:
+
+1. jsDelivr CDN
+2. GitHub raw
+3. ghproxy
+
+If GitHub raw is blocked or times out, the installer should continue with the next mirror automatically. If all three mirrors fail, the installer stops and prints the failed mirror list instead of continuing with a partial install.
+
+To check jsDelivr reachability manually:
+
+Windows PowerShell:
+
+```powershell
+irm https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@main/package.json
+```
+
+macOS/Linux/WSL:
+
+```bash
+curl -v https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@main/package.json
+```
+
+If all mirrors are unreachable, clone the repository manually and run the launcher from the local checkout:
+
+```bash
+git clone https://github.com/2922062699-beep/hermes-mobile-bridge.git
+cd hermes-mobile-bridge
+node bridge/server.mjs
+```
+
 ## Node.js Missing
 
 The Phase 1 Bridge runs with Node.js.
