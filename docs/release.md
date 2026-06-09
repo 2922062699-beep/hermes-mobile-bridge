@@ -53,7 +53,7 @@ curl -I https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@<payloa
 
 ## Current Version
 
-Bridge version: `0.4.0`
+Bridge version: `0.4.1`
 
 Current payload pin: check `$BridgePayloadRef` in `install.ps1` and `BRIDGE_PAYLOAD_REF` in `install.sh` on `main`. They must match.
 
