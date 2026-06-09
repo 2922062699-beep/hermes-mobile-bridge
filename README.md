@@ -57,6 +57,24 @@ Default install directory:
 $HOME/.hermes-mobile-bridge
 ```
 
+## 国内用户 / Mainland China users
+
+GitHub raw may be slow or unreachable from some mainland China networks. If the default Quick Start command times out, use the jsDelivr mirror bootstrap instead.
+
+Windows PowerShell:
+
+```powershell
+irm https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@main/install.ps1 | iex
+```
+
+macOS/Linux/WSL:
+
+```bash
+curl -fsSL https://cdn.jsdelivr.net/gh/2922062699-beep/hermes-mobile-bridge@main/install.sh | bash
+```
+
+Both bootstrap commands install the same Bridge payload. The installer itself also tries three payload mirrors in order: jsDelivr, GitHub raw, then ghproxy. You can use whichever bootstrap URL is reachable on your network.
+
 Or, from this repository on Windows:
 
 ```powershell
